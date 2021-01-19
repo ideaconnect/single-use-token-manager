@@ -48,3 +48,10 @@ Thumbs.db
 *.mov
 *.wmv
 
+/vendor/
+*.cache
+composer.lock
+coverage.txt
+.php_cs.dist
+/report/
+.vscode/

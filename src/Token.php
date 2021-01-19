@@ -1,0 +1,58 @@
+<?php
+
+namespace Praetorian\TokenService;
+
+use InvalidArgumentException;
+use Symfony\Component\Uid\Uuid;
+
+final class Token implements TokenInterface
+{
+    const TYPE_ERROR = 'Type must be a not empty, only alphanumeric string not longer than 16 symbols. Used `%s`.';
+
+    private string $uid;
+    private string $type;
+    private $payload;
+
+    /**
+     * Creates a new immutable token.
+     *
+     * @param string $type
+     * @param mixed|null $payload
+     * @throws InvalidArgumentException
+     * @return Token
+     */
+    public function __construct(string $type, $payload = null)
+    {
+        if (empty($type) || strlen($type) > 16 || preg_match('/[^a-z0-9]/', $type)) {
+            throw new InvalidArgumentException(sprintf(static::TYPE_ERROR, $type));
+        }
+
+        $this->uid = Uuid::v6();
+        $this->type = $type;
+        $this->payload = $payload;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getUid(): string
+    {
+        return $this->uid;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getType(): string
+    {
+        return $this->type;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getPayload()
+    {
+        return $this->payload;
+    }
+}
