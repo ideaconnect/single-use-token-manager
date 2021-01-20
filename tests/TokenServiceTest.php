@@ -8,7 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Praetorian\TokenService\Token;
 use Praetorian\TokenService\TokenInterface;
 use Praetorian\TokenService\TokenService;
-use Preatorian\Prometheus\CacheService\CacheServiceInterface;
+use Praetorian\Prometheus\CacheService\CacheServiceInterface;
 use ReflectionClass;
 use stdClass;
 
@@ -52,8 +52,7 @@ final class TokenServiceTest extends TestCase
 
         $cache->expects($this->once())
             ->method('set')
-            ->with($this->anything(), $this->anything(), TokenService::CACHE_TAG, null);
-        ;
+            ->with($this->anything(), $this->anything(), TokenService::CACHE_TAG, null);;
 
         $token = $tokenService->createToken('testtype');
 
@@ -77,8 +76,7 @@ final class TokenServiceTest extends TestCase
 
         $cache->expects($this->once())
             ->method('set')
-            ->with($this->anything(), $this->anything(), TokenService::CACHE_TAG, null);
-        ;
+            ->with($this->anything(), $this->anything(), TokenService::CACHE_TAG, null);;
 
         $testObject = new stdClass();
         $testObject->test = 'abc';
@@ -106,8 +104,7 @@ final class TokenServiceTest extends TestCase
 
         $cache->expects($this->once())
             ->method('set')
-            ->with($this->anything(), $this->anything(), TokenService::CACHE_TAG, 150);
-        ;
+            ->with($this->anything(), $this->anything(), TokenService::CACHE_TAG, 150);;
 
         $testObject = new stdClass();
         $testObject->test = 'abc';
@@ -168,7 +165,6 @@ final class TokenServiceTest extends TestCase
             ->willReturn($tokenMock);
 
         $token = $tokenService->consumeToken('abc');
-        $this->assertSame($tokenMock, $token);
-        ;
+        $this->assertSame($tokenMock, $token);;
     }
 }
