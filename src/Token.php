@@ -23,7 +23,7 @@ final class Token implements TokenInterface
      */
     public function __construct(string $type, $payload = null)
     {
-        if (empty($type) || strlen($type) > 16 || !preg_match('/[^a-z0-9]/', $type)) {
+        if (empty($type) || strlen($type) > 16 || preg_match('/[^a-z0-9]/', $type)) {
             throw new InvalidArgumentException(sprintf(static::TYPE_ERROR, $type));
         }
 
