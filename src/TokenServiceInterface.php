@@ -28,5 +28,5 @@ interface TokenServiceInterface
      * @param string $uid
      * @return Token|null
      */
-    public function consumeToken(string $uid): ?TokenInterface;
+    public function consumeToken(string $uid, bool $keepToken = false) : ?TokenInterface;
 }

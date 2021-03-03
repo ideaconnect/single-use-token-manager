@@ -36,7 +36,7 @@ final class TokenService implements TokenServiceInterface
     /**
      * {@inheritdoc}
      */
-    public function consumeToken(string $uid): ?TokenInterface
+    public function consumeToken(string $uid, bool $keepToken = false): ?TokenInterface
     {
         $key = $this->buildKey($uid);
         $cache = $this->getCache();
@@ -46,7 +46,9 @@ final class TokenService implements TokenServiceInterface
             return null;
         }
 
-        $cache->delete($key);
+        if (!$keepToken) {
+            $cache->delete($key);
+        }
 
         return $token;
     }
