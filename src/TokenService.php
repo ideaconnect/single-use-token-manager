@@ -9,17 +9,15 @@ use Praetorian\Prometheus\CacheService\CacheServiceInterface;
  */
 final class TokenService implements TokenServiceInterface
 {
-    private CacheServiceInterface $cache;
-
     /**
      * Creates service instance.
      *
      * @param CacheServiceInterface
      * @return TokenService
      */
-    public function __construct(CacheServiceInterface $cache)
-    {
-        $this->cache = $cache;
+    public function __construct(
+        protected CacheServiceInterface $cache
+        ) {
     }
 
     /**
