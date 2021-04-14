@@ -7,8 +7,8 @@ namespace Praetorian\TokenService;
  */
 interface TokenServiceInterface
 {
-    const CACHE_KEY = 'TOKEN:';
-    const CACHE_TAG = 'TOKEN';
+    const CACHE_KEY = 'TKN:';
+    const CACHE_TAG = 'TKN';
 
     /**
      * Creates a token.
