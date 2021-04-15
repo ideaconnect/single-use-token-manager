@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Praetorian\Tests\TokenService;
 
 use PHPUnit\Framework\TestCase;
-use Praetorian\Prometheus\CacheService\CacheServiceInterface;
+use Praetorian\CacheService\CacheServiceInterface;
 use Praetorian\TokenService\Token;
 use Praetorian\TokenService\TokenInterface;
 use Praetorian\TokenService\TokenService;
@@ -44,6 +44,7 @@ final class TokenServiceTest extends TestCase
 
         $cache = $this->getMockBuilder(CacheServiceInterface::class)
             ->setMockClassName('cacheServiceFaker')
+            ->onlyMethods(['set'])
             ->getMock();
 
         $tokenService->expects($this->once())

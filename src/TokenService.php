@@ -67,7 +67,7 @@ final class TokenService implements TokenServiceInterface
      * @param string
      * @return string
      */
-    private function buildKey(string $uid)
+    private function buildKey(string $uid): string
     {
         return static::CACHE_KEY . $uid;
     }
