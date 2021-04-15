@@ -15,7 +15,7 @@
         "php": "^8.0",
         "ext-phpiredis": "*",
         "ext-igbinary": "*",
-        "praetoriantechnology/cache-service": "^1.2.1",
+        "praetoriantechnology/cache-service": "^1.3",
         "symfony/uid": "^5.2"
     },
     "autoload": {

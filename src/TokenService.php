@@ -2,7 +2,7 @@
 
 namespace Praetorian\TokenService;
 
-use Praetorian\Prometheus\CacheService\CacheServiceInterface;
+use Praetorian\CacheService\CacheServiceInterface;
 
 /**
  * Creats and consumes tokens.
