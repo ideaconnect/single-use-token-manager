@@ -1,0 +1,8 @@
+default:
+  suites:
+    default:
+      contexts:
+        - Praetorian\Tests\TokenService\Behat\TokenContext
+        - Praetorian\Tests\TokenService\Behat\TokenServiceContext:
+            host: 'treecache'
+            port: 6379
