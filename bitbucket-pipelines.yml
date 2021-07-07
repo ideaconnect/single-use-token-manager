@@ -14,4 +14,11 @@ pipelines:
                       - docker-php-ext-enable phpiredis igbinary zip xdebug
                       - composer install
                       - XDEBUG_MODE=coverage composer test
-                      - COVERAGE=`cat coverage.txt`
+                      - cat coverage.txt
+                  services:
+                    - redis
+
+definitions:
+  services:
+    redis:
+      image: redis:latest

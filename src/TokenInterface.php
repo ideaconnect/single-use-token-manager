@@ -1,20 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Praetorian\TokenService;
 
 interface TokenInterface
 {
     /**
      * Returns the unique identifier in GUID format.
-     *
-     * @return string
      */
     public function getUid(): string;
 
     /**
      * Retruns the type (value used when creating the token).
-     *
-     * @return string
      */
     public function getType(): string;
 
@@ -23,7 +21,7 @@ interface TokenInterface
      *
      * May be null
      *
-     * @return null|mixed
+     * @return mixed|null
      */
     public function getPayload();
 }

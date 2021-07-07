@@ -35,7 +35,7 @@ final class TokenServiceTest extends TestCase
         $this->assertSame($cache, $cacheReturned);
     }
 
-    public function testCreateToken_justType()
+    public function testCreateTokenJustType()
     {
         $tokenService = $this->getMockBuilder(TokenService::class)
             ->onlyMethods(['getCache'])
@@ -54,14 +54,13 @@ final class TokenServiceTest extends TestCase
         $cache->expects($this->once())
             ->method('set')
             ->with($this->anything(), $this->anything(), TokenService::CACHE_TAG, null);
-        ;
 
         $token = $tokenService->createToken('testtype');
 
         $this->assertEquals('testtype', $token->getType());
     }
 
-    public function testCreateToken_typeAndPayload()
+    public function testCreateTokenTypeAndPayload()
     {
         $tokenService = $this->getMockBuilder(TokenService::class)
             ->onlyMethods(['getCache'])
@@ -79,7 +78,6 @@ final class TokenServiceTest extends TestCase
         $cache->expects($this->once())
             ->method('set')
             ->with($this->anything(), $this->anything(), TokenService::CACHE_TAG, null);
-        ;
 
         $testObject = new stdClass();
         $testObject->test = 'abc';
@@ -90,7 +88,7 @@ final class TokenServiceTest extends TestCase
         $this->assertSame($testObject, $token->getPayload());
     }
 
-    public function testCreateToken_typeAndPayloadAndTtl()
+    public function testCreateTokenTypeAndPayloadAndTtl()
     {
         $tokenService = $this->getMockBuilder(TokenService::class)
             ->onlyMethods(['getCache'])
@@ -108,7 +106,6 @@ final class TokenServiceTest extends TestCase
         $cache->expects($this->once())
             ->method('set')
             ->with($this->anything(), $this->anything(), TokenService::CACHE_TAG, 150);
-        ;
 
         $testObject = new stdClass();
         $testObject->test = 'abc';
@@ -119,7 +116,7 @@ final class TokenServiceTest extends TestCase
         $this->assertSame($testObject, $token->getPayload());
     }
 
-    public function testConsumeToken_null()
+    public function testConsumeTokenNull()
     {
         $tokenService = $this->getMockBuilder(TokenService::class)
             ->onlyMethods(['getCache'])
@@ -143,7 +140,7 @@ final class TokenServiceTest extends TestCase
         $this->assertNull($token);
     }
 
-    public function testConsumeToken_exists()
+    public function testConsumeTokenExists()
     {
         $tokenService = $this->getMockBuilder(TokenService::class)
             ->onlyMethods(['getCache'])
@@ -170,6 +167,5 @@ final class TokenServiceTest extends TestCase
 
         $token = $tokenService->consumeToken('abc');
         $this->assertSame($tokenMock, $token);
-        ;
     }
 }

@@ -64,7 +64,6 @@ final class TokenContext implements Context
         try {
             $this->token = new Token('', $this->payload);
         } catch (\Exception $exception) {
-
         }
     }
 

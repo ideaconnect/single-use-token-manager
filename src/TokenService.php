@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Praetorian\TokenService;
 
 use Praetorian\CacheService\CacheServiceInterface;
@@ -13,6 +15,7 @@ final class TokenService implements TokenServiceInterface
      * Creates service instance.
      *
      * @param CacheServiceInterface
+     *
      * @return TokenService
      */
     public function __construct(
@@ -53,10 +56,8 @@ final class TokenService implements TokenServiceInterface
 
     /**
      * Returns the cache.
-     *
-     * @return CacheServiceInterface
      */
-    protected function getCache(): CacheServiceInterface
+    private function getCache(): CacheServiceInterface
     {
         return $this->cache;
     }
@@ -65,10 +66,9 @@ final class TokenService implements TokenServiceInterface
      * Builds the token key.
      *
      * @param string
-     * @return string
      */
     private function buildKey(string $uid): string
     {
-        return static::CACHE_KEY . $uid;
+        return static::CACHE_KEY.$uid;
     }
 }

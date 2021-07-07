@@ -16,7 +16,7 @@ final class TokenTest extends TestCase
 
     public function testConstructorWithPayload(): void
     {
-        $payload = new \stdClass;
+        $payload = new \stdClass();
         $payload->data = mt_rand(100, 200);
 
         $token = new Token('sometest', $payload);

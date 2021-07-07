@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Praetorian\TokenService;
 
 use InvalidArgumentException;
@@ -14,16 +16,18 @@ final class Token implements TokenInterface
     /**
      * Creates a new immutable token.
      *
-     * @param string $type
+     * @param string     $type
      * @param mixed|null $payload
+     *
      * @throws InvalidArgumentException
+     *
      * @return Token
      */
     public function __construct(
         private string $type,
         private $payload = null)
     {
-        if (empty($type) || strlen($type) > 16 || preg_match('/[^a-z0-9]/', $type)) {
+        if (empty($type) || mb_strlen($type) > 16 || preg_match('/[^a-z0-9]/', $type)) {
             throw new InvalidArgumentException(sprintf(static::TYPE_ERROR, $type));
         }
 

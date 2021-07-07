@@ -118,5 +118,4 @@ final class TokenServiceContext implements Context
         $this->token = $this->tokenService->createToken($arg1, $arg2, (int) $arg3);
         sleep(2);
     }
-
 }
