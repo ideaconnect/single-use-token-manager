@@ -6,12 +6,13 @@ namespace Praetorian\TokenService;
 
 use InvalidArgumentException;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Component\Uid\UuidV6;
 
 final class Token implements TokenInterface
 {
     const TYPE_ERROR = 'Type must be a not empty, only alphanumeric string not longer than 16 symbols. Used `%s`.';
 
-    private string $uid;
+    private UuidV6 $uid;
 
     /**
      * Creates a new immutable token.
@@ -41,7 +42,7 @@ final class Token implements TokenInterface
      */
     public function getUid(): string
     {
-        return $this->uid;
+        return (string) $this->uid;
     }
 
     /**

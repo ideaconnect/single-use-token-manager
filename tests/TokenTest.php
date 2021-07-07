@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use Praetorian\TokenService\Token;
 use ReflectionClass;
+use Symfony\Component\Uid\UuidV6;
 
 final class TokenTest extends TestCase
 {
@@ -35,11 +36,13 @@ final class TokenTest extends TestCase
     {
         $token = new Token('sometest');
 
+        $uuid = new UuidV6();
+
         $reflectionClass = new ReflectionClass(static::TESTED_CLASS);
         $reflectionProperty = $reflectionClass->getProperty('uid');
         $reflectionProperty->setAccessible(true);
-        $reflectionProperty->setValue($token, 'foobar');
-        $this->assertEquals('foobar', $token->getUid());
+        $reflectionProperty->setValue($token, $uuid);
+        $this->assertEquals((string) $uuid, $token->getUid());
     }
 
     public function testEmptyType(): void

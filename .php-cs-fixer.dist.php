@@ -34,6 +34,7 @@ $config = new PhpCsFixer\Config();
         'encoding' => true,
         'heredoc_indentation' => true,
         'heredoc_to_nowdoc' => true,
+        'protected_to_private' => false,
         'is_null' => true,
         'mb_str_functions' => true,
         'method_chaining_indentation' => true,

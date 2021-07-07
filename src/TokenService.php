@@ -57,7 +57,7 @@ final class TokenService implements TokenServiceInterface
     /**
      * Returns the cache.
      */
-    private function getCache(): CacheServiceInterface
+    protected function getCache(): CacheServiceInterface
     {
         return $this->cache;
     }
@@ -67,7 +67,7 @@ final class TokenService implements TokenServiceInterface
      *
      * @param string
      */
-    private function buildKey(string $uid): string
+    protected function buildKey(string $uid): string
     {
         return static::CACHE_KEY.$uid;
     }
