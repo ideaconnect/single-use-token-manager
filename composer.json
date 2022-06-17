@@ -21,7 +21,7 @@
         "ext-phpiredis": "*",
         "ext-igbinary": "*",
         "praetoriantechnology/cache-service": "^2.0.1",
-        "symfony/uid": "^5.2 || ^4.4"
+        "symfony/uid": "^6 || ^5.2"
     },
     "autoload": {
         "psr-4": {
