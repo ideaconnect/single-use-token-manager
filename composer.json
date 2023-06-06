@@ -17,11 +17,9 @@
     ],
     "minimum-stability": "stable",
     "require": {
-        "php": "^8.0",
-        "ext-phpiredis": "*",
-        "ext-igbinary": "*",
+        "php": "^8.1",
         "praetoriantechnology/cache-service": "4.x-dev",
-        "symfony/uid": "^6 || ^5.2"
+        "symfony/uid": "^6"
     },
     "autoload": {
         "psr-4": {
