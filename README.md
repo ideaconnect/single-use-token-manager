@@ -10,6 +10,8 @@ A comprehensive single-use token management library using Symfony Cache with sup
 - **Full Test Coverage**: 100% unit test coverage with comprehensive functional tests
 - **Validation & Serialization**: Built-in validation and JSON serialization support
 - **Docker Integration**: Easy testing with Docker-based Redis instances
+- **Comprehensive Documentation**: Extensive PHPDoc documentation for all classes and methods
+- **Type Safety**: Full type declarations and strict typing throughout the codebase
 
 ## Installation
 
@@ -22,6 +24,23 @@ composer require gryfoss/single-use-token-manager
 - PHP 8.1 or higher
 - Redis extension (for Redis-based tests)
 - Docker and Docker Compose (for functional tests)
+
+## API Documentation
+
+All classes and methods include comprehensive PHPDoc documentation with:
+- Detailed descriptions of functionality
+- Parameter and return type documentation
+- Usage examples and best practices
+- Exception handling information
+- Implementation notes for different cache adapters
+
+### Core Classes
+
+- **`TokenServiceInterface`**: Defines the contract for token management services
+- **`TokenService`**: Main implementation with cache adapter support
+- **`TokenInterface`**: Contract for token objects
+- **`Token`**: Immutable token implementation with UUID v6 identifiers
+- **`TokenIdentifier`**: DTO for token identification with validation
 
 ## Testing
 
