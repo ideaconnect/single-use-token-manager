@@ -2,15 +2,15 @@ default:
   suites:
     array_adapter:
       contexts:
-        - Praetorian\Tests\TokenService\Behat\TokenContext
-        - Praetorian\Tests\TokenService\Behat\ArrayAdapterTokenServiceContext
+        - GryfOSS\Tests\SingleUseTokenManager\Behat\TokenContext
+        - GryfOSS\Tests\SingleUseTokenManager\Behat\ArrayAdapterTokenServiceContext
       filters:
         tags: "@array"
 
     redis_tags:
       contexts:
-        - Praetorian\Tests\TokenService\Behat\TokenContext
-        - Praetorian\Tests\TokenService\Behat\RedisTagsTokenServiceContext:
+        - GryfOSS\Tests\SingleUseTokenManager\Behat\TokenContext
+        - GryfOSS\Tests\SingleUseTokenManager\Behat\RedisTagsTokenServiceContext:
             host: 'localhost'
             port: 6379
       filters:
@@ -18,8 +18,8 @@ default:
 
     redis_no_tags:
       contexts:
-        - Praetorian\Tests\TokenService\Behat\TokenContext
-        - Praetorian\Tests\TokenService\Behat\RedisNoTagsTokenServiceContext:
+        - GryfOSS\Tests\SingleUseTokenManager\Behat\TokenContext
+        - GryfOSS\Tests\SingleUseTokenManager\Behat\RedisNoTagsTokenServiceContext:
             host: 'localhost'
             port: 6380
       filters:

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Praetorian\Tests\TokenService;
+namespace GryfOSS\Tests\SingleUseTokenManager;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
-use Praetorian\TokenService\Token;
+use GryfOSS\SingleUseTokenManager\Token;
 use ReflectionClass;
 use Symfony\Component\Uid\UuidV6;
 

@@ -1,6 +1,6 @@
 {
-    "name": "praetoriantechnology/token-service",
-    "description": "Tokening service",
+    "name": "gryfoss/single-use-token-manager",
+    "description": "Single-use token management library with multiple cache adapters support",
     "type": "library",
     "license": "MIT",
     "authors": [
@@ -29,12 +29,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Praetorian\\TokenService\\": "src/"
+            "GryfOSS\\SingleUseTokenManager\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Praetorian\\Tests\\TokenService\\": "tests/"
+            "GryfOSS\\Tests\\SingleUseTokenManager\\": "tests/"
         }
     },
     "scripts": {

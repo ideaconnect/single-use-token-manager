@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Praetorian\Tests\TokenService\Behat;
+namespace GryfOSS\Tests\SingleUseTokenManager\Behat;
 
 use Behat\Behat\Context\Context;
 use PHPUnit\Framework\Assert;
-use Praetorian\TokenService\TokenInterface;
-use Praetorian\TokenService\TokenService;
+use GryfOSS\SingleUseTokenManager\TokenInterface;
+use GryfOSS\SingleUseTokenManager\TokenService;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
 final class ArrayAdapterTokenServiceContext implements Context

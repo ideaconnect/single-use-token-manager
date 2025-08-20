@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Praetorian\Tests\TokenService;
+namespace GryfOSS\Tests\SingleUseTokenManager;
 
 use DG\BypassFinals;
 use PHPUnit\Runner\BeforeTestHook;

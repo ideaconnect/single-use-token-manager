@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Praetorian\TokenService;
+namespace GryfOSS\SingleUseTokenManager;
 
 use OpenApi\Attributes as OA;
 use Symfony\Component\Serializer\Attribute\SerializedName;

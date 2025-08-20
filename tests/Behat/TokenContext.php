@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Praetorian\Tests\TokenService\Behat;
+namespace GryfOSS\Tests\SingleUseTokenManager\Behat;
 
 use Behat\Behat\Context\Context;
 use PHPUnit\Framework\Assert;
-use Praetorian\TokenService\Token;
+use GryfOSS\SingleUseTokenManager\Token;
 
 final class TokenContext implements Context
 {

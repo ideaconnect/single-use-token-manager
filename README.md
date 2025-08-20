@@ -1,11 +1,10 @@
-Token Service
-=============
+# Single Use Token Manager
 
-A comprehensive token management service using Symfony Cache with support for multiple cache adapters.
+A comprehensive single-use token management library using Symfony Cache with support for multiple cache adapters.
 
 ## Features
 
-- **Token Creation & Consumption**: Create unique tokens with optional TTL and consume them
+- **Token Creation & Consumption**: Create unique single-use tokens with optional TTL and consume them
 - **Multiple Cache Adapters**: Support for ArrayAdapter, Redis with tags, and Redis without tags
 - **Tag-Aware Clearing**: Efficient token clearing with tag-aware adapters
 - **Full Test Coverage**: 100% unit test coverage with comprehensive functional tests
@@ -15,7 +14,7 @@ A comprehensive token management service using Symfony Cache with support for mu
 ## Installation
 
 ```bash
-composer install
+composer require gryfoss/single-use-token-manager
 ```
 
 ## Requirements
@@ -126,7 +125,7 @@ The service automatically detects cache adapter capabilities:
 ## Usage
 
 ```php
-use Praetorian\TokenService\TokenService;
+use GryfOSS\SingleUseTokenManager\TokenService;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
 // Create service with ArrayAdapter
@@ -146,8 +145,8 @@ $tokenService->clearAllTokens();
 ### Advanced Usage
 
 ```php
-use Praetorian\TokenService\TokenService;
-use Praetorian\TokenService\TokenIdentifier;
+use GryfOSS\SingleUseTokenManager\TokenService;
+use GryfOSS\SingleUseTokenManager\TokenIdentifier;
 use Symfony\Component\Cache\Adapter\RedisTagAwareAdapter;
 use Symfony\Component\Validator\Validation;
 

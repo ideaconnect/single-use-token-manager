@@ -5,7 +5,7 @@ services:
       - "6379:6379"
     command: redis-server --appendonly yes
     volumes:
-      - redis_data:/data
+      - single_use_token_manager_redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -18,7 +18,7 @@ services:
       - "6380:6379"
     command: redis-server --appendonly yes
     volumes:
-      - redis_no_tags_data:/data
+      - single_use_token_manager_redis_no_tags_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -26,5 +26,5 @@ services:
       retries: 5
 
 volumes:
-  redis_data:
-  redis_no_tags_data:
+  single_use_token_manager_redis_data:
+  single_use_token_manager_redis_no_tags_data:

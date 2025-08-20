@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Praetorian\TokenService;
+namespace GryfOSS\SingleUseTokenManager;
 
 interface TokenInterface
 {

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Praetorian\TokenService;
+namespace GryfOSS\SingleUseTokenManager;
 
 use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Component\Cache\Adapter\TagAwareAdapterInterface;

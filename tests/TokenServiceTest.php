@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Praetorian\Tests\TokenService;
+namespace GryfOSS\Tests\SingleUseTokenManager;
 
 use PHPUnit\Framework\TestCase;
-use Praetorian\TokenService\Token;
-use Praetorian\TokenService\TokenInterface;
-use Praetorian\TokenService\TokenService;
+use GryfOSS\SingleUseTokenManager\Token;
+use GryfOSS\SingleUseTokenManager\TokenInterface;
+use GryfOSS\SingleUseTokenManager\TokenService;
 use Psr\Cache\CacheItemInterface;
 use Psr\Cache\CacheItemPoolInterface;
 use ReflectionClass;

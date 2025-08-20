@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Praetorian\TokenService;
+namespace GryfOSS\SingleUseTokenManager;
 
 use InvalidArgumentException;
 use Symfony\Component\Uid\Uuid;

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" backupGlobals="false" bootstrap="vendor/autoload.php" verbose="true" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd">
   <extensions>
-      <extension class="Praetorian\Tests\TokenService\BypassFinalHook"/>
+      <extension class="GryfOSS\Tests\SingleUseTokenManager\BypassFinalHook"/>
   </extensions>
   <coverage>
     <report>
@@ -13,7 +13,7 @@
         <directory suffix=".php">src</directory>
     </include>
   </coverage>
-  <testsuite name="RedisCacheService TestSuite">
+  <testsuite name="SingleUseTokenManager TestSuite">
     <directory suffix="Test.php">./tests</directory>
   </testsuite>
   <logging/>

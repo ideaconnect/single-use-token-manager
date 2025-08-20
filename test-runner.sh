@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Token Service Test Runner
+# Single Use Token Manager Test Runner
 # This script manages Docker containers and runs Behat tests for different cache adapters
 
 set -e
@@ -108,7 +108,7 @@ run_unit_tests() {
 
 # Function to show help
 show_help() {
-    echo "Token Service Test Runner"
+    echo "Single Use Token Manager Test Runner"
     echo ""
     echo "Usage: $0 [COMMAND] [OPTIONS]"
     echo ""
