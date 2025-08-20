@@ -66,3 +66,36 @@ try {
 } catch (Exception $e) {
     echo "Redis not available: " . $e->getMessage() . "\n";
 }
+
+echo "\n";
+
+// Example 4: Demonstrating clearAllTokens functionality
+echo "=== Example 4: Clear All Tokens ===\n";
+$arrayCache2 = new ArrayAdapter();
+$tokenService4 = new TokenService($arrayCache2);
+
+// Create multiple tokens
+$token4a = $tokenService4->createToken('multi1', 'data1');
+$token4b = $tokenService4->createToken('multi2', 'data2');
+$token4c = $tokenService4->createToken('multi3', 'data3');
+
+echo "Created 3 tokens:\n";
+echo "- " . $token4a->getUid() . " (type: " . $token4a->getType() . ")\n";
+echo "- " . $token4b->getUid() . " (type: " . $token4b->getType() . ")\n";
+echo "- " . $token4c->getUid() . " (type: " . $token4c->getType() . ")\n";
+
+// Verify they exist
+$exists4a = $tokenService4->consumeToken($token4a->getUid(), true) !== null;
+$exists4b = $tokenService4->consumeToken($token4b->getUid(), true) !== null;
+$exists4c = $tokenService4->consumeToken($token4c->getUid(), true) !== null;
+echo "All tokens exist: " . ($exists4a && $exists4b && $exists4c ? "YES" : "NO") . "\n";
+
+// Clear all tokens
+$clearResult = $tokenService4->clearAllTokens();
+echo "Clear all tokens result: " . ($clearResult ? "SUCCESS" : "FAILED") . "\n";
+
+// Verify they're gone
+$gone4a = $tokenService4->consumeToken($token4a->getUid()) === null;
+$gone4b = $tokenService4->consumeToken($token4b->getUid()) === null;
+$gone4c = $tokenService4->consumeToken($token4c->getUid()) === null;
+echo "All tokens cleared: " . ($gone4a && $gone4b && $gone4c ? "YES" : "NO") . "\n";

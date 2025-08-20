@@ -30,4 +30,11 @@ interface TokenServiceInterface
      * @return Token|null
      */
     public function consumeToken(string $uid, bool $keepToken = false): ?TokenInterface;
+
+    /**
+     * Clears all tokens from the cache.
+     *
+     * @return bool True if tokens were successfully cleared, false otherwise
+     */
+    public function clearAllTokens(): bool;
 }

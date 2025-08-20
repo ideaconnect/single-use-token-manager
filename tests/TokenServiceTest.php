@@ -12,6 +12,7 @@ use Psr\Cache\CacheItemInterface;
 use Psr\Cache\CacheItemPoolInterface;
 use ReflectionClass;
 use stdClass;
+use Symfony\Component\Cache\Adapter\TagAwareAdapterInterface;
 
 final class TokenServiceTest extends TestCase
 {
@@ -235,5 +236,55 @@ final class TokenServiceTest extends TestCase
 
         $token = $tokenService->consumeToken('abc');
         $this->assertSame($tokenMock, $token);
+    }
+
+    public function testClearAllTokensWithRegularCache()
+    {
+        $tokenService = $this->getMockBuilder(TokenService::class)
+            ->onlyMethods(['getCache'])
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $cache = $this->getMockBuilder(CacheItemPoolInterface::class)
+            ->setMockClassName('cacheServiceFaker')
+            ->getMock();
+
+        $tokenService->expects($this->once())
+            ->method('getCache')
+            ->will($this->returnValue($cache));
+
+        $cache->expects($this->once())
+            ->method('clear')
+            ->willReturn(true);
+
+        $result = $tokenService->clearAllTokens();
+        $this->assertTrue($result);
+    }
+
+    public function testClearAllTokensWithTagAwareCache()
+    {
+        $tokenService = $this->getMockBuilder(TokenService::class)
+            ->onlyMethods(['getCache'])
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $cache = $this->getMockBuilder(TagAwareAdapterInterface::class)
+            ->setMockClassName('tagAwareCacheFaker')
+            ->getMock();
+
+        $tokenService->expects($this->once())
+            ->method('getCache')
+            ->will($this->returnValue($cache));
+
+        $cache->expects($this->once())
+            ->method('invalidateTags')
+            ->with([TokenService::CACHE_TAG])
+            ->willReturn(true);
+
+        $cache->expects($this->never())
+            ->method('clear');
+
+        $result = $tokenService->clearAllTokens();
+        $this->assertTrue($result);
     }
 }
