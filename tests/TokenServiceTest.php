@@ -287,4 +287,161 @@ final class TokenServiceTest extends TestCase
         $result = $tokenService->clearAllTokens();
         $this->assertTrue($result);
     }
+
+    public function testCreateTokenWithTagAwareAdapter()
+    {
+        // Test the actual tagging functionality with a real TagAwareAdapter
+        $arrayAdapter = new \Symfony\Component\Cache\Adapter\ArrayAdapter();
+        $tagAwareAdapter = new \Symfony\Component\Cache\Adapter\TagAwareAdapter($arrayAdapter);
+        $tokenService = new TokenService($tagAwareAdapter);
+
+        $token = $tokenService->createToken('testtype');
+
+        $this->assertEquals('testtype', $token->getType());
+        
+        // Verify the token was stored and can be retrieved
+        $consumedToken = $tokenService->consumeToken($token->getUid(), true);
+        $this->assertInstanceOf(TokenInterface::class, $consumedToken);
+        $this->assertEquals('testtype', $consumedToken->getType());
+    }
+
+    public function testConsumeTokenWithKeepToken()
+    {
+        $tokenService = $this->getMockBuilder(TokenService::class)
+            ->onlyMethods(['getCache'])
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $cache = $this->getMockBuilder(CacheItemPoolInterface::class)
+            ->setMockClassName('cacheServiceFaker')
+            ->getMock();
+
+        $cacheItem = $this->getMockBuilder(CacheItemInterface::class)
+            ->getMock();
+
+        $tokenMock = $this->getMockBuilder(TokenInterface::class)
+            ->setMockClassName('fakeToken')
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $tokenService->expects($this->once())
+            ->method('getCache')
+            ->will($this->returnValue($cache));
+
+        $cache->expects($this->once())
+            ->method('getItem')
+            ->with($this->anything())
+            ->willReturn($cacheItem);
+
+        $cacheItem->expects($this->once())
+            ->method('isHit')
+            ->willReturn(true);
+
+        $cacheItem->expects($this->once())
+            ->method('get')
+            ->willReturn($tokenMock);
+
+        $cache->expects($this->never())
+            ->method('deleteItem');
+
+        $token = $tokenService->consumeToken('abc', true);
+        $this->assertSame($tokenMock, $token);
+    }
+
+    public function testConsumeTokenWithInvalidTokenType()
+    {
+        $tokenService = $this->getMockBuilder(TokenService::class)
+            ->onlyMethods(['getCache'])
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $cache = $this->getMockBuilder(CacheItemPoolInterface::class)
+            ->setMockClassName('cacheServiceFaker')
+            ->getMock();
+
+        $cacheItem = $this->getMockBuilder(CacheItemInterface::class)
+            ->getMock();
+
+        $tokenService->expects($this->once())
+            ->method('getCache')
+            ->will($this->returnValue($cache));
+
+        $cache->expects($this->once())
+            ->method('getItem')
+            ->with($this->anything())
+            ->willReturn($cacheItem);
+
+        $cacheItem->expects($this->once())
+            ->method('isHit')
+            ->willReturn(true);
+
+        $cacheItem->expects($this->once())
+            ->method('get')
+            ->willReturn('not a token interface');
+
+        $token = $tokenService->consumeToken('abc');
+        $this->assertNull($token);
+    }
+
+    public function testBuildKey()
+    {
+        $tokenService = $this->getMockBuilder(TokenService::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $reflectionClass = new ReflectionClass(TokenService::class);
+        $method = $reflectionClass->getMethod('buildKey');
+        $method->setAccessible(true);
+
+        $key = $method->invoke($tokenService, 'test-uid-123');
+        
+        $this->assertEquals('TKN_test-uid-123', $key);
+    }
+
+    public function testClearAllTokensReturnsFalse()
+    {
+        $tokenService = $this->getMockBuilder(TokenService::class)
+            ->onlyMethods(['getCache'])
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $cache = $this->getMockBuilder(CacheItemPoolInterface::class)
+            ->setMockClassName('cacheServiceFaker')
+            ->getMock();
+
+        $tokenService->expects($this->once())
+            ->method('getCache')
+            ->will($this->returnValue($cache));
+
+        $cache->expects($this->once())
+            ->method('clear')
+            ->willReturn(false);
+
+        $result = $tokenService->clearAllTokens();
+        $this->assertFalse($result);
+    }
+
+    public function testClearAllTokensWithTagAwareCacheReturnsFalse()
+    {
+        $tokenService = $this->getMockBuilder(TokenService::class)
+            ->onlyMethods(['getCache'])
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $cache = $this->getMockBuilder(TagAwareAdapterInterface::class)
+            ->setMockClassName('tagAwareCacheFaker')
+            ->getMock();
+
+        $tokenService->expects($this->once())
+            ->method('getCache')
+            ->will($this->returnValue($cache));
+
+        $cache->expects($this->once())
+            ->method('invalidateTags')
+            ->with([TokenService::CACHE_TAG])
+            ->willReturn(false);
+
+        $result = $tokenService->clearAllTokens();
+        $this->assertFalse($result);
+    }
 }

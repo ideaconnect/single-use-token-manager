@@ -38,7 +38,44 @@ $consumedToken = $tokenService->consumeToken($token->getUid());
 
 // Or consume but keep it in cache
 $consumedToken = $tokenService->consumeToken($token->getUid(), true);
+
+// Clear all tokens from the cache
+$cleared = $tokenService->clearAllTokens(); // Returns true if successful
 ```
+
+### Clear All Tokens
+
+The `clearAllTokens()` method provides a convenient way to remove all tokens from the cache. The implementation automatically detects the cache adapter capabilities:
+
+- **Tag-Aware Adapters**: Uses tag-based invalidation to clear only token-related cache items, preserving other cached data
+- **Regular Adapters**: Clears the entire cache pool
+
+```php
+// Using a tag-aware adapter (recommended for shared cache pools)
+use Symfony\Component\Cache\Adapter\TagAwareAdapter;
+use Symfony\Component\Cache\Adapter\FilesystemAdapter;
+
+$filesystemAdapter = new FilesystemAdapter();
+$tagAwareCache = new TagAwareAdapter($filesystemAdapter);
+$tokenService = new TokenService($tagAwareCache);
+
+// Add some tokens
+$token1 = $tokenService->createToken('login', ['user_id' => 123]);
+$token2 = $tokenService->createToken('reset', 'password-data');
+
+// Add non-token data to the same cache
+$nonTokenItem = $tagAwareCache->getItem('user_preferences');
+$nonTokenItem->set(['theme' => 'dark']);
+$tagAwareCache->save($nonTokenItem);
+
+// Clear only tokens (non-token data is preserved)
+$tokenService->clearAllTokens();
+```
+
+**Important Notes:**
+- When using tag-aware adapters, only token-related cache items are cleared
+- When using regular adapters, the **entire cache pool is cleared**
+- For shared cache pools, always use tag-aware adapters to avoid clearing unrelated data
 
 ### Cache Adapters
 
@@ -66,7 +103,7 @@ If you're migrating from a previous version that used `praetoriantechnology/cach
 
 1. Update your composer.json to require symfony/cache instead of praetoriantechnology/cache-service
 2. Update your dependency injection to inject a PSR-6 CacheItemPoolInterface instead of CacheServiceInterface
-3. The public API (createToken, consumeToken methods) remains the same
+3. The public API (`createToken`, `consumeToken`, `clearAllTokens` methods) remains the same
 
 ## Requirements
 
