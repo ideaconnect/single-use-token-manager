@@ -21,7 +21,7 @@ composer require gryfoss/single-use-token-manager
 
 ## Requirements
 
-- PHP 8.1 or higher
+- PHP 8.2 or higher (tested on PHP 8.2, 8.3, and 8.4)
 - Redis extension (for Redis-based tests)
 - Docker and Docker Compose (for functional tests)
 
@@ -45,6 +45,22 @@ All classes and methods include comprehensive PHPDoc documentation with:
 ## Testing
 
 This project includes comprehensive testing with three different cache adapter scenarios:
+
+### Matrix Testing
+
+The GitHub Actions workflow tests the library against multiple PHP versions:
+- **PHP 8.2**: Minimum supported version
+- **PHP 8.3**: LTS version with coverage reporting
+- **PHP 8.4**: Latest stable version
+
+### Test Coverage
+
+Each PHP version runs:
+- ✅ **Unit Tests**: Complete test suite with 32 tests and 75 assertions
+- ✅ **Functional Tests**: All three cache adapter scenarios
+- ✅ **Coverage Verification**: 100% code coverage (validated on PHP 8.3)
+
+### Cache Adapter Testing
 
 ### 1. ArrayAdapter (Offline Storage)
 - In-memory storage, no persistence

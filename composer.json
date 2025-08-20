@@ -5,19 +5,14 @@
     "license": "MIT",
     "authors": [
         {
-            "name": "Bartosz from Praetorian Technology",
-            "email": "bartosz@praetorian.technology",
-            "role": "Lead Developer"
-        },
-        {
-            "name": "Marcin from Praetorian Technology",
-            "email": "marcin@praetorian.technology",
-            "role": "Software Developer"
+            "name": "IDCT Bartosz Pachołek",
+            "email": "bartosz+github@idct.tech",
+            "role": "Developer"
         }
     ],
     "minimum-stability": "stable",
     "require": {
-        "php": "^8.1",
+        "php": "^8.2",
         "ext-redis": "*",
         "psr/cache": "^2.0 || ^3.0",
         "symfony/cache": "^6 || ^7",
