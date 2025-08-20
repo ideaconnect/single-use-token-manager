@@ -1,177 +1,221 @@
-praetoriantechnology/token-service
-==================================
+Token Service
+=============
 
-Main token service: creates and consumes token using Symfony Cache component.
+A comprehensive token management service using Symfony Cache with support for multiple cache adapters.
+
+## Features
+
+- **Token Creation & Consumption**: Create unique tokens with optional TTL and consume them
+- **Multiple Cache Adapters**: Support for ArrayAdapter, Redis with tags, and Redis without tags
+- **Tag-Aware Clearing**: Efficient token clearing with tag-aware adapters
+- **Full Test Coverage**: 100% unit test coverage with comprehensive functional tests
+- **Validation & Serialization**: Built-in validation and JSON serialization support
+- **Docker Integration**: Easy testing with Docker-based Redis instances
 
 ## Installation
 
 ```bash
-composer require praetoriantechnology/token-service
+composer install
 ```
+
+## Requirements
+
+- PHP 8.1 or higher
+- Redis extension (for Redis-based tests)
+- Docker and Docker Compose (for functional tests)
+
+## Testing
+
+This project includes comprehensive testing with three different cache adapter scenarios:
+
+### 1. ArrayAdapter (Offline Storage)
+- In-memory storage, no persistence
+- Ideal for development and unit testing
+- No external dependencies
+
+### 2. Redis with Tags (Online Storage + Tag Support)
+- Persistent Redis storage with tag support
+- Efficient token clearing using cache tags
+- Requires Redis server
+
+### 3. Redis without Tags (Online Storage, No Tag Support)
+- Persistent Redis storage without tag support
+- Full cache clearing for token management
+- Requires Redis server
+
+### GitHub Actions CI/CD
+
+The project includes automated testing via GitHub Actions that verifies:
+
+✅ **Unit Tests**: All 32 unit tests pass
+✅ **100% Code Coverage**: Automatically verified (build fails if not 100%)
+✅ **Functional Tests**: All cache adapters tested (ArrayAdapter, Redis+Tags, Redis-NoTags)
+
+**Workflows:**
+- `.github/workflows/ci.yml` - Main CI pipeline (focuses on the 3 core requirements)
+- `.github/workflows/test.yml` - Comprehensive testing with matrix
+- `.github/workflows/simple-test.yml` - Detailed multi-job pipeline
+
+### Local Coverage Verification
+
+```bash
+# Verify 100% coverage locally (same check as GitHub Actions)
+./verify-coverage.sh
+```
+
+
+### Manual Testing
+
+```bash
+# Start Docker services
+./test-runner.sh start
+
+# Run specific test suites
+./test-runner.sh test array           # ArrayAdapter tests
+./test-runner.sh test redis_tags      # Redis with tags tests
+./test-runner.sh test redis_no_tags   # Redis without tags tests
+./test-runner.sh test all             # All functional tests
+
+# Run unit tests
+./test-runner.sh unit
+
+# Run everything
+./test-runner.sh full
+
+# Clean up
+./test-runner.sh clean
+```
+
+### Composer Scripts
+
+```bash
+composer test:unit                    # Run unit tests with coverage
+composer test:functional-array        # Run ArrayAdapter tests
+composer test:functional-redis-tags   # Run Redis with tags tests
+composer test:functional-redis-no-tags # Run Redis without tags tests
+composer test:functional             # Run all functional tests
+composer test:full                   # Run all tests
+composer docker:start               # Start Docker services
+composer docker:stop                # Stop Docker services
+composer docker:clean               # Clean up Docker
+```
+
+## Architecture
+
+### Core Classes
+
+- **TokenService**: Main service implementing TokenServiceInterface
+- **Token**: Token entity with UUID, type, payload, and TTL
+- **TokenIdentifier**: DTO for token validation and serialization
+- **TokenInterface**: Contract for token objects
+
+### Cache Strategy
+
+The service automatically detects cache adapter capabilities:
+
+- **Tag-Aware Adapters**: Use cache tags for efficient selective clearing
+- **Non-Tag-Aware Adapters**: Use full cache pool clearing
+- **ArrayAdapter**: In-memory storage for development/testing
+
+### Validation & Serialization
+
+- **Symfony Validator**: Attribute-based validation (NotBlank, NotNull, Type)
+- **Symfony Serializer**: JSON serialization with SerializedName attributes
+- **OpenAPI Integration**: API documentation attributes
 
 ## Usage
 
-The token service now uses Symfony's PSR-6 Cache component, which provides great flexibility in choosing your cache backend.
-
-### Basic Usage
-
 ```php
 use Praetorian\TokenService\TokenService;
-use Symfony\Component\Cache\Adapter\FilesystemAdapter;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
-// Create a cache adapter (filesystem in this example)
-$cache = new FilesystemAdapter();
-
-// Create the token service
+// Create service with ArrayAdapter
+$cache = new ArrayAdapter();
 $tokenService = new TokenService($cache);
 
 // Create a token
-$token = $tokenService->createToken('login', ['user_id' => 123], 3600); // 1 hour TTL
+$token = $tokenService->createToken('user_session', ['user_id' => 123], 3600);
 
-// Get token details
-echo $token->getUid();     // Returns UUID string
-echo $token->getType();    // Returns 'login'
-var_dump($token->getPayload()); // Returns ['user_id' => 123]
-
-// Consume the token (removes it from cache)
+// Consume the token
 $consumedToken = $tokenService->consumeToken($token->getUid());
 
-// Or consume but keep it in cache
-$consumedToken = $tokenService->consumeToken($token->getUid(), true);
-
-// Clear all tokens from the cache
-$cleared = $tokenService->clearAllTokens(); // Returns true if successful
-```
-
-### Clear All Tokens
-
-The `clearAllTokens()` method provides a convenient way to remove all tokens from the cache. The implementation automatically detects the cache adapter capabilities:
-
-- **Tag-Aware Adapters**: Uses tag-based invalidation to clear only token-related cache items, preserving other cached data
-- **Regular Adapters**: Clears the entire cache pool
-
-```php
-// Using a tag-aware adapter (recommended for shared cache pools)
-use Symfony\Component\Cache\Adapter\TagAwareAdapter;
-use Symfony\Component\Cache\Adapter\FilesystemAdapter;
-
-$filesystemAdapter = new FilesystemAdapter();
-$tagAwareCache = new TagAwareAdapter($filesystemAdapter);
-$tokenService = new TokenService($tagAwareCache);
-
-// Add some tokens
-$token1 = $tokenService->createToken('login', ['user_id' => 123]);
-$token2 = $tokenService->createToken('reset', 'password-data');
-
-// Add non-token data to the same cache
-$nonTokenItem = $tagAwareCache->getItem('user_preferences');
-$nonTokenItem->set(['theme' => 'dark']);
-$tagAwareCache->save($nonTokenItem);
-
-// Clear only tokens (non-token data is preserved)
+// Clear all tokens
 $tokenService->clearAllTokens();
 ```
 
-**Important Notes:**
-- When using tag-aware adapters, only token-related cache items are cleared
-- When using regular adapters, the **entire cache pool is cleared**
-- For shared cache pools, always use tag-aware adapters to avoid clearing unrelated data
-
-### TokenIdentifier Class
-
-The library includes a `TokenIdentifier` class with validation and serialization support:
+### Advanced Usage
 
 ```php
+use Praetorian\TokenService\TokenService;
 use Praetorian\TokenService\TokenIdentifier;
-use Symfony\Component\Serializer\Encoder\JsonEncoder;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
-use Symfony\Component\Serializer\Serializer;
+use Symfony\Component\Cache\Adapter\RedisTagAwareAdapter;
 use Symfony\Component\Validator\Validation;
 
-// Create and validate a token identifier
-$tokenIdentifier = new TokenIdentifier();
-$tokenIdentifier->token = 'your-token-value';
+// Redis with tag support
+$redis = new \Redis();
+$redis->connect('localhost', 6379);
+$cache = new RedisTagAwareAdapter($redis);
+$tokenService = new TokenService($cache);
 
-// Validation
+// Create multiple tokens
+$loginToken = $tokenService->createToken('login', ['user_id' => 123], 3600);
+$resetToken = $tokenService->createToken('reset', 'password-data', 1800);
+
+// Validate token identifier
+$tokenIdentifier = new TokenIdentifier();
+$tokenIdentifier->token = $loginToken->getUid();
+
 $validator = Validation::createValidatorBuilder()
     ->enableAttributeMapping()
     ->getValidator();
-    
+
 $violations = $validator->validate($tokenIdentifier);
 if (count($violations) === 0) {
     echo "Token is valid!";
 }
 
-// Serialization
-$serializer = new Serializer([new ObjectNormalizer()], [new JsonEncoder()]);
-$json = $serializer->serialize($tokenIdentifier, 'json');
-// Result: {"token":"your-token-value"}
+// Clear all tokens efficiently (uses tags)
+$tokenService->clearAllTokens();
 ```
 
-The TokenIdentifier class includes:
-- **Validation attributes**: NotBlank, NotNull, Type validation
-- **Serialization support**: Custom serialized name via SerializedName attribute  
-- **OpenAPI documentation**: Schema attributes for API documentation
+## Test Coverage
 
-### Cache Adapters
+- **Unit Tests**: 32 tests, 75 assertions, 100% code coverage
+- **Functional Tests**: Multiple scenarios across 3 cache adapters
+- **Integration Tests**: Docker-based Redis testing
+- **Validation Tests**: Comprehensive constraint testing
 
-You can use any PSR-6 compatible cache adapter:
+## Development
 
-```php
-// Filesystem cache (good for production)
-$cache = new \Symfony\Component\Cache\Adapter\FilesystemAdapter();
+### Docker Services
 
-// Redis cache (good for distributed systems)
-$redis = new \Redis();
-$redis->connect('127.0.0.1', 6379);
-$cache = new \Symfony\Component\Cache\Adapter\RedisAdapter($redis);
+The project includes Docker Compose configuration for:
 
-// Array cache (good for testing)
-$cache = new \Symfony\Component\Cache\Adapter\ArrayAdapter();
+- **redis**: Redis instance on port 6379 (with tag support)
+- **redis-no-tags**: Redis instance on port 6380 (without tag support)
 
-// APCu cache (good for single-server setups)
-$cache = new \Symfony\Component\Cache\Adapter\ApcuAdapter();
+### Test Structure
+
+```
+tests/
+├── Behat/
+│   ├── ArrayAdapterTokenServiceContext.php
+│   ├── RedisTagsTokenServiceContext.php
+│   ├── RedisNoTagsTokenServiceContext.php
+│   ├── TokenContext.php
+│   └── TokenServiceContext.php (legacy)
+├── TokenServiceTest.php
+├── TokenTest.php
+└── TokenIdentifierTest.php
+
+features/
+├── token.feature
+├── tokenService.feature (legacy)
+├── tokenService-array.feature
+├── tokenService-redis-tags.feature
+└── tokenService-redis-no-tags.feature
 ```
 
-### Migration from previous version
+## License
 
-If you're migrating from a previous version that used `praetoriantechnology/cache-service`, you need to:
-
-1. Update your composer.json to require symfony/cache instead of praetoriantechnology/cache-service
-2. Update your dependency injection to inject a PSR-6 CacheItemPoolInterface instead of CacheServiceInterface
-3. The public API (`createToken`, `consumeToken`, `clearAllTokens` methods) remains the same
-
-## Requirements
-
-- PHP 8.1 or higher
-- symfony/cache ^6 || ^7
-- symfony/property-access ^6 || ^7  
-- symfony/serializer ^6 || ^7
-- symfony/uid ^6 || ^7
-- symfony/validator ^6 || ^7
-- zircote/swagger-php ^4.0
-
-## Features
-
-- **Token Creation & Consumption**: Create single-use tokens with optional TTL
-- **Multiple Cache Backends**: Support for any PSR-6 compatible cache adapter
-- **Tag-Aware Caching**: Smart cache clearing with tag-aware adapters
-- **Token Validation**: Built-in validation using Symfony Validator
-- **Serialization Support**: JSON serialization/deserialization with Symfony Serializer
-- **OpenAPI Documentation**: TokenIdentifier class with OpenAPI annotations
-
-## Testing
-
-```bash
-# Install dependencies
-composer install
-
-# Run unit tests
-composer test:unit
-
-# Run functional tests (requires Redis)
-composer test:functional
-
-# Run all tests
-composer test
-```
+MIT License

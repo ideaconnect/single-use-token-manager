@@ -18,6 +18,7 @@
     "minimum-stability": "stable",
     "require": {
         "php": "^8.1",
+        "ext-redis": "*",
         "psr/cache": "^2.0 || ^3.0",
         "symfony/cache": "^6 || ^7",
         "symfony/property-access": "^6 || ^7",
@@ -38,12 +39,18 @@
     },
     "scripts": {
         "test:unit": "XDEBUG_MODE=coverage ./vendor/phpunit/phpunit/phpunit",
-        "test:functional": "./vendor/bin/behat",
-        "test:functional-array": "./vendor/bin/behat --config=behat.array.yml",
+        "test:functional": "./test-runner.sh test all",
+        "test:functional-array": "./test-runner.sh test array",
+        "test:functional-redis-tags": "./test-runner.sh test redis_tags",
+        "test:functional-redis-no-tags": "./test-runner.sh test redis_no_tags",
+        "test:full": "./test-runner.sh full",
         "test": [
             "@test:unit",
             "@test:functional-array"
         ],
+        "docker:start": "./test-runner.sh start",
+        "docker:stop": "./test-runner.sh stop",
+        "docker:clean": "./test-runner.sh clean",
         "fix": "./vendor/friendsofphp/php-cs-fixer/php-cs-fixer fix --allow-risky=yes"
     },
     "require-dev": {

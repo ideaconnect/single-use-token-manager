@@ -1,8 +1,26 @@
 default:
   suites:
-    default:
+    array_adapter:
       contexts:
         - Praetorian\Tests\TokenService\Behat\TokenContext
-        - Praetorian\Tests\TokenService\Behat\TokenServiceContext:
+        - Praetorian\Tests\TokenService\Behat\ArrayAdapterTokenServiceContext
+      filters:
+        tags: "@array"
+
+    redis_tags:
+      contexts:
+        - Praetorian\Tests\TokenService\Behat\TokenContext
+        - Praetorian\Tests\TokenService\Behat\RedisTagsTokenServiceContext:
             host: 'localhost'
             port: 6379
+      filters:
+        tags: "@redis_tags"
+
+    redis_no_tags:
+      contexts:
+        - Praetorian\Tests\TokenService\Behat\TokenContext
+        - Praetorian\Tests\TokenService\Behat\RedisNoTagsTokenServiceContext:
+            host: 'localhost'
+            port: 6380
+      filters:
+        tags: "@redis_no_tags"

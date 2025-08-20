@@ -5,7 +5,7 @@
 ### Added Tests for TokenService:
 
 1. **testCreateTokenWithTagAwareAdapter** - Tests token creation with tag-aware cache adapters
-2. **testConsumeTokenWithKeepToken** - Tests consuming a token while keeping it in cache  
+2. **testConsumeTokenWithKeepToken** - Tests consuming a token while keeping it in cache
 3. **testConsumeTokenWithInvalidTokenType** - Tests handling when cached item is not a TokenInterface
 4. **testBuildKey** - Tests the protected buildKey method using reflection
 5. **testClearAllTokensReturnsFalse** - Tests clearAllTokens when cache.clear() returns false
@@ -27,7 +27,7 @@ The following dependencies were added to support TokenIdentifier functionality:
 ## Coverage Results:
 
 - **Classes**: 100.00% (2/2)
-- **Methods**: 100.00% (10/10)  
+- **Methods**: 100.00% (10/10)
 - **Lines**: 100.00% (36/36)
 
 ### Breakdown by Class:
@@ -44,12 +44,12 @@ The following dependencies were added to support TokenIdentifier functionality:
 
 ## Key Coverage Areas:
 
-✅ Constructor and dependency injection  
-✅ Token creation (with and without TTL)  
-✅ Token creation with tag-aware adapters  
-✅ Token consumption (with and without keeping)  
-✅ Token consumption edge cases  
-✅ Cache key building  
-✅ Clear all tokens (both strategies)  
-✅ Error handling and edge cases  
+✅ Constructor and dependency injection
+✅ Token creation (with and without TTL)
+✅ Token creation with tag-aware adapters
+✅ Token consumption (with and without keeping)
+✅ Token consumption edge cases
+✅ Cache key building
+✅ Clear all tokens (both strategies)
+✅ Error handling and edge cases
 ✅ All protected/private method access via reflection where needed

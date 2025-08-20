@@ -298,7 +298,7 @@ final class TokenServiceTest extends TestCase
         $token = $tokenService->createToken('testtype');
 
         $this->assertEquals('testtype', $token->getType());
-        
+
         // Verify the token was stored and can be retrieved
         $consumedToken = $tokenService->consumeToken($token->getUid(), true);
         $this->assertInstanceOf(TokenInterface::class, $consumedToken);
@@ -394,7 +394,7 @@ final class TokenServiceTest extends TestCase
         $method->setAccessible(true);
 
         $key = $method->invoke($tokenService, 'test-uid-123');
-        
+
         $this->assertEquals('TKN_test-uid-123', $key);
     }
 
