@@ -77,6 +77,42 @@ $tokenService->clearAllTokens();
 - When using regular adapters, the **entire cache pool is cleared**
 - For shared cache pools, always use tag-aware adapters to avoid clearing unrelated data
 
+### TokenIdentifier Class
+
+The library includes a `TokenIdentifier` class with validation and serialization support:
+
+```php
+use Praetorian\TokenService\TokenIdentifier;
+use Symfony\Component\Serializer\Encoder\JsonEncoder;
+use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
+use Symfony\Component\Serializer\Serializer;
+use Symfony\Component\Validator\Validation;
+
+// Create and validate a token identifier
+$tokenIdentifier = new TokenIdentifier();
+$tokenIdentifier->token = 'your-token-value';
+
+// Validation
+$validator = Validation::createValidatorBuilder()
+    ->enableAttributeMapping()
+    ->getValidator();
+    
+$violations = $validator->validate($tokenIdentifier);
+if (count($violations) === 0) {
+    echo "Token is valid!";
+}
+
+// Serialization
+$serializer = new Serializer([new ObjectNormalizer()], [new JsonEncoder()]);
+$json = $serializer->serialize($tokenIdentifier, 'json');
+// Result: {"token":"your-token-value"}
+```
+
+The TokenIdentifier class includes:
+- **Validation attributes**: NotBlank, NotNull, Type validation
+- **Serialization support**: Custom serialized name via SerializedName attribute  
+- **OpenAPI documentation**: Schema attributes for API documentation
+
 ### Cache Adapters
 
 You can use any PSR-6 compatible cache adapter:
@@ -109,7 +145,20 @@ If you're migrating from a previous version that used `praetoriantechnology/cach
 
 - PHP 8.1 or higher
 - symfony/cache ^6 || ^7
+- symfony/property-access ^6 || ^7  
+- symfony/serializer ^6 || ^7
 - symfony/uid ^6 || ^7
+- symfony/validator ^6 || ^7
+- zircote/swagger-php ^4.0
+
+## Features
+
+- **Token Creation & Consumption**: Create single-use tokens with optional TTL
+- **Multiple Cache Backends**: Support for any PSR-6 compatible cache adapter
+- **Tag-Aware Caching**: Smart cache clearing with tag-aware adapters
+- **Token Validation**: Built-in validation using Symfony Validator
+- **Serialization Support**: JSON serialization/deserialization with Symfony Serializer
+- **OpenAPI Documentation**: TokenIdentifier class with OpenAPI annotations
 
 ## Testing
 
