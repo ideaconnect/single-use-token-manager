@@ -1,5 +1,16 @@
 # Single Use Token Manager
 
+[![Tests](https://github.com/GryfOSS/single-use-token-manager/workflows/Tests/badge.svg)](https://github.com/GryfOSS/single-use-token-manager/actions)
+[![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg?style=flat&logo=codecov)](https://github.com/GryfOSS/single-use-token-manager/actions)
+[![PHP Version](https://img.shields.io/badge/php-8.2%20%7C%208.3%20%7C%208.4-777BB4.svg?style=flat&logo=php&logoColor=white)](https://packagist.org/packages/gryfoss/single-use-token-manager)
+[![Symfony](https://img.shields.io/badge/symfony-6%20%7C%207-000000.svg?style=flat&logo=symfony)](https://symfony.com/)
+[![PSR-6](https://img.shields.io/badge/PSR-6-orange.svg?style=flat)](https://www.php-fig.org/psr/psr-6/)
+[![Docker](https://img.shields.io/badge/docker-supported-2496ED.svg?style=flat&logo=docker&logoColor=white)](docker-compose.yml)
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat)](LICENSE)
+[![Latest Stable Version](https://img.shields.io/packagist/v/gryfoss/single-use-token-manager.svg?style=flat&logo=packagist)](https://packagist.org/packages/gryfoss/single-use-token-manager)
+[![Total Downloads](https://img.shields.io/packagist/dt/gryfoss/single-use-token-manager.svg?style=flat&logo=packagist)](https://packagist.org/packages/gryfoss/single-use-token-manager)
+
 A comprehensive single-use token management library using Symfony Cache with support for multiple cache adapters.
 
 ## Features
@@ -18,6 +29,29 @@ A comprehensive single-use token management library using Symfony Cache with sup
 ```bash
 composer require gryfoss/single-use-token-manager
 ```
+
+## Quality & Compatibility
+
+- **🧪 Tests**: Automated testing with GitHub Actions across multiple PHP versions
+- **📊 Coverage**: 100% code coverage maintained with comprehensive unit and functional tests
+- **🐘 PHP Support**: Compatible with PHP 8.2, 8.3, and 8.4
+- **🎼 Symfony Integration**: Built on Symfony 6 & 7 components (Cache, Validator, Serializer, UID)
+- **📋 PSR Compliance**: Implements PSR-6 (Caching Interface) standards
+- **🐳 Docker Support**: Complete Docker Compose setup for testing environments
+- **📦 Stable Release**: Available on Packagist with semantic versioning
+- **📥 Community Adoption**: Tracked downloads and usage statistics
+- **📄 MIT License**: Free and open source with permissive licensing
+
+## Quality & Compatibility
+
+- **🧪 Tests**: Automated testing with GitHub Actions across multiple PHP versions
+- **📊 Coverage**: 100% code coverage maintained with comprehensive unit and functional tests
+- **🐘 PHP Support**: Compatible with PHP 8.2, 8.3, and 8.4
+- **🎼 Symfony Integration**: Built on Symfony 6 & 7 components (Cache, Validator, Serializer, UID)
+- **� PSR Compliance**: Implements PSR-6 (Caching Interface) standards
+- **�📦 Stable Release**: Available on Packagist with semantic versioning
+- **📥 Community Adoption**: Tracked downloads and usage statistics
+- **📄 MIT License**: Free and open source with permissive licensing
 
 ## Requirements
 
@@ -43,6 +77,8 @@ All classes and methods include comprehensive PHPDoc documentation with:
 - **`TokenIdentifier`**: DTO for token identification with validation
 
 ## Testing
+
+[![Tests](https://github.com/GryfOSS/single-use-token-manager/workflows/Tests/badge.svg)](https://github.com/GryfOSS/single-use-token-manager/actions) [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](https://github.com/GryfOSS/single-use-token-manager/actions)
 
 This project includes comprehensive testing with three different cache adapter scenarios:
 
@@ -249,6 +285,20 @@ features/
 ├── tokenService-redis-tags.feature
 └── tokenService-redis-no-tags.feature
 ```
+
+## Badge Reference
+
+| Badge | Description | Purpose |
+|-------|-------------|---------|
+| ![Tests](https://github.com/GryfOSS/single-use-token-manager/workflows/Tests/badge.svg) | CI/CD Pipeline Status | Shows if all tests pass across PHP 8.2, 8.3, 8.4 |
+| ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg) | Code Coverage | Indicates 100% test coverage maintained |
+| ![PHP](https://img.shields.io/badge/php-8.2%20%7C%208.3%20%7C%208.4-777BB4.svg) | PHP Version Support | Supported PHP versions for compatibility |
+| ![Symfony](https://img.shields.io/badge/symfony-6%20%7C%207-000000.svg) | Framework Integration | Built with Symfony components |
+| ![PSR-6](https://img.shields.io/badge/PSR-6-orange.svg) | Standards Compliance | Implements PSR-6 Caching Interface |
+| ![Docker](https://img.shields.io/badge/docker-supported-2496ED.svg) | Container Support | Docker Compose for testing environments |
+| ![License](https://img.shields.io/badge/License-MIT-yellow.svg) | License Type | MIT License for open source usage |
+| ![Version](https://img.shields.io/packagist/v/gryfoss/single-use-token-manager.svg) | Latest Release | Current stable version on Packagist |
+| ![Downloads](https://img.shields.io/packagist/dt/gryfoss/single-use-token-manager.svg) | Community Usage | Total package downloads |
 
 ## License
 

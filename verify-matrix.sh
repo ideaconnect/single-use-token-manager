@@ -62,7 +62,7 @@ fi
 if [[ "$PHP_VERSION" == "8.3" ]]; then
     echo ""
     echo_info "📊 Step 2: Running coverage verification (PHP 8.3 only)..."
-    
+
     if XDEBUG_MODE=coverage ./vendor/bin/phpunit --coverage-clover=coverage.xml --coverage-text; then
         # Extract coverage percentage
         COVERAGE=$(php -r "
