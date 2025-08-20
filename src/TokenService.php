@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Praetorian\TokenService;
 
-use Praetorian\CacheService\CacheServiceInterface;
+use Psr\Cache\CacheItemPoolInterface;
 
 /**
  * Creats and consumes tokens.
@@ -14,12 +14,12 @@ final class TokenService implements TokenServiceInterface
     /**
      * Creates service instance.
      *
-     * @param CacheServiceInterface
+     * @param CacheItemPoolInterface
      *
      * @return TokenService
      */
     public function __construct(
-        protected CacheServiceInterface $cache
+        protected CacheItemPoolInterface $cache
         ) {
     }
 
@@ -29,7 +29,15 @@ final class TokenService implements TokenServiceInterface
     public function createToken(string $type, $payload = null, ?int $ttl = null): TokenInterface
     {
         $token = new Token($type, $payload);
-        $this->getCache()->set($this->buildKey($token->getUid()), $token, static::CACHE_TAG, $ttl);
+        $cache = $this->getCache();
+        $item = $cache->getItem($this->buildKey($token->getUid()));
+        $item->set($token);
+
+        if ($ttl !== null) {
+            $item->expiresAfter($ttl);
+        }
+
+        $cache->save($item);
 
         return $token;
     }
@@ -41,14 +49,20 @@ final class TokenService implements TokenServiceInterface
     {
         $key = $this->buildKey($uid);
         $cache = $this->getCache();
-        $token = $cache->get($key);
+        $item = $cache->getItem($key);
 
-        if (!$token || !$token instanceof TokenInterface) {
+        if (!$item->isHit()) {
+            return null;
+        }
+
+        $token = $item->get();
+
+        if (!$token instanceof TokenInterface) {
             return null;
         }
 
         if (!$keepToken) {
-            $cache->delete($key);
+            $cache->deleteItem($key);
         }
 
         return $token;
@@ -57,7 +71,7 @@ final class TokenService implements TokenServiceInterface
     /**
      * Returns the cache.
      */
-    protected function getCache(): CacheServiceInterface
+    protected function getCache(): CacheItemPoolInterface
     {
         return $this->cache;
     }

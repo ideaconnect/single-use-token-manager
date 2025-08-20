@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Praetorian\Tests\TokenService;
 
 use PHPUnit\Framework\TestCase;
-use Praetorian\CacheService\CacheServiceInterface;
 use Praetorian\TokenService\Token;
 use Praetorian\TokenService\TokenInterface;
 use Praetorian\TokenService\TokenService;
+use Psr\Cache\CacheItemInterface;
+use Psr\Cache\CacheItemPoolInterface;
 use ReflectionClass;
 use stdClass;
 
@@ -19,8 +20,8 @@ final class TokenServiceTest extends TestCase
 
     public function testConstructor(): void
     {
-        /** @var CacheServiceInterface */
-        $cache = $this->getMockBuilder(CacheServiceInterface::class)
+        /** @var CacheItemPoolInterface */
+        $cache = $this->getMockBuilder(CacheItemPoolInterface::class)
             ->setMockClassName('cacheServiceFaker')
             ->getMock();
 
@@ -42,9 +43,11 @@ final class TokenServiceTest extends TestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $cache = $this->getMockBuilder(CacheServiceInterface::class)
+        $cache = $this->getMockBuilder(CacheItemPoolInterface::class)
             ->setMockClassName('cacheServiceFaker')
-            ->onlyMethods(['set'])
+            ->getMock();
+
+        $cacheItem = $this->getMockBuilder(CacheItemInterface::class)
             ->getMock();
 
         $tokenService->expects($this->once())
@@ -52,8 +55,20 @@ final class TokenServiceTest extends TestCase
             ->will($this->returnValue($cache));
 
         $cache->expects($this->once())
+            ->method('getItem')
+            ->with($this->anything())
+            ->willReturn($cacheItem);
+
+        $cacheItem->expects($this->once())
             ->method('set')
-            ->with($this->anything(), $this->anything(), TokenService::CACHE_TAG, null);
+            ->with($this->anything());
+
+        $cacheItem->expects($this->never())
+            ->method('expiresAfter');
+
+        $cache->expects($this->once())
+            ->method('save')
+            ->with($cacheItem);
 
         $token = $tokenService->createToken('testtype');
 
@@ -67,8 +82,11 @@ final class TokenServiceTest extends TestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $cache = $this->getMockBuilder(CacheServiceInterface::class)
+        $cache = $this->getMockBuilder(CacheItemPoolInterface::class)
             ->setMockClassName('cacheServiceFaker')
+            ->getMock();
+
+        $cacheItem = $this->getMockBuilder(CacheItemInterface::class)
             ->getMock();
 
         $tokenService->expects($this->once())
@@ -76,8 +94,20 @@ final class TokenServiceTest extends TestCase
             ->will($this->returnValue($cache));
 
         $cache->expects($this->once())
+            ->method('getItem')
+            ->with($this->anything())
+            ->willReturn($cacheItem);
+
+        $cacheItem->expects($this->once())
             ->method('set')
-            ->with($this->anything(), $this->anything(), TokenService::CACHE_TAG, null);
+            ->with($this->anything());
+
+        $cacheItem->expects($this->never())
+            ->method('expiresAfter');
+
+        $cache->expects($this->once())
+            ->method('save')
+            ->with($cacheItem);
 
         $testObject = new stdClass();
         $testObject->test = 'abc';
@@ -95,8 +125,11 @@ final class TokenServiceTest extends TestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $cache = $this->getMockBuilder(CacheServiceInterface::class)
+        $cache = $this->getMockBuilder(CacheItemPoolInterface::class)
             ->setMockClassName('cacheServiceFaker')
+            ->getMock();
+
+        $cacheItem = $this->getMockBuilder(CacheItemInterface::class)
             ->getMock();
 
         $tokenService->expects($this->once())
@@ -104,8 +137,21 @@ final class TokenServiceTest extends TestCase
             ->will($this->returnValue($cache));
 
         $cache->expects($this->once())
+            ->method('getItem')
+            ->with($this->anything())
+            ->willReturn($cacheItem);
+
+        $cacheItem->expects($this->once())
             ->method('set')
-            ->with($this->anything(), $this->anything(), TokenService::CACHE_TAG, 150);
+            ->with($this->anything());
+
+        $cacheItem->expects($this->once())
+            ->method('expiresAfter')
+            ->with(150);
+
+        $cache->expects($this->once())
+            ->method('save')
+            ->with($cacheItem);
 
         $testObject = new stdClass();
         $testObject->test = 'abc';
@@ -123,8 +169,11 @@ final class TokenServiceTest extends TestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $cache = $this->getMockBuilder(CacheServiceInterface::class)
+        $cache = $this->getMockBuilder(CacheItemPoolInterface::class)
             ->setMockClassName('cacheServiceFaker')
+            ->getMock();
+
+        $cacheItem = $this->getMockBuilder(CacheItemInterface::class)
             ->getMock();
 
         $tokenService->expects($this->once())
@@ -132,9 +181,13 @@ final class TokenServiceTest extends TestCase
             ->will($this->returnValue($cache));
 
         $cache->expects($this->once())
-            ->method('get')
+            ->method('getItem')
             ->with($this->anything())
-            ->willReturn(null);
+            ->willReturn($cacheItem);
+
+        $cacheItem->expects($this->once())
+            ->method('isHit')
+            ->willReturn(false);
 
         $token = $tokenService->consumeToken('abc');
         $this->assertNull($token);
@@ -147,23 +200,38 @@ final class TokenServiceTest extends TestCase
             ->disableOriginalConstructor()
             ->getMock();
 
-        $cache = $this->getMockBuilder(CacheServiceInterface::class)
+        $cache = $this->getMockBuilder(CacheItemPoolInterface::class)
             ->setMockClassName('cacheServiceFaker')
             ->getMock();
 
-        $tokenService->expects($this->once())
-            ->method('getCache')
-            ->will($this->returnValue($cache));
+        $cacheItem = $this->getMockBuilder(CacheItemInterface::class)
+            ->getMock();
 
         $tokenMock = $this->getMockBuilder(TokenInterface::class)
             ->setMockClassName('fakeToken')
             ->disableOriginalConstructor()
             ->getMock();
 
+        $tokenService->expects($this->once())
+            ->method('getCache')
+            ->will($this->returnValue($cache));
+
         $cache->expects($this->once())
-            ->method('get')
+            ->method('getItem')
             ->with($this->anything())
+            ->willReturn($cacheItem);
+
+        $cacheItem->expects($this->once())
+            ->method('isHit')
+            ->willReturn(true);
+
+        $cacheItem->expects($this->once())
+            ->method('get')
             ->willReturn($tokenMock);
+
+        $cache->expects($this->once())
+            ->method('deleteItem')
+            ->with($this->anything());
 
         $token = $tokenService->consumeToken('abc');
         $this->assertSame($tokenMock, $token);

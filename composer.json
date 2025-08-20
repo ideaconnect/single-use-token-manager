@@ -18,7 +18,8 @@
     "minimum-stability": "stable",
     "require": {
         "php": "^8.1",
-        "praetoriantechnology/cache-service": "4.x-dev",
+        "psr/cache": "^2.0 || ^3.0",
+        "symfony/cache": "^6 || ^7",
         "symfony/uid": "^6 || ^7"
     },
     "autoload": {
@@ -34,9 +35,10 @@
     "scripts": {
         "test:unit": "XDEBUG_MODE=coverage ./vendor/phpunit/phpunit/phpunit",
         "test:functional": "./vendor/bin/behat",
+        "test:functional-array": "./vendor/bin/behat --config=behat.array.yml",
         "test": [
             "@test:unit",
-            "@test:functional"
+            "@test:functional-array"
         ],
         "fix": "./vendor/friendsofphp/php-cs-fixer/php-cs-fixer fix --allow-risky=yes"
     },

@@ -9,7 +9,7 @@ namespace Praetorian\TokenService;
  */
 interface TokenServiceInterface
 {
-    const CACHE_KEY = 'TKN:';
+    const CACHE_KEY = 'TKN_';
     const CACHE_TAG = 'TKN';
 
     /**

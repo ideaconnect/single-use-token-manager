@@ -8,9 +8,9 @@ use Behat\Behat\Context\Context;
 use PHPUnit\Framework\Assert;
 use Praetorian\TokenService\TokenInterface;
 use Praetorian\TokenService\TokenService;
-use Symfony\Component\Cache\Adapter\RedisAdapter;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
-final class TokenServiceContext implements Context
+final class TokenServiceArrayContext implements Context
 {
     private TokenService $tokenService;
 
@@ -22,11 +22,10 @@ final class TokenServiceContext implements Context
 
     private $consumedToken = null;
 
-    public function __construct(string $host, ?int $port = null)
+    public function __construct()
     {
-        $redisConnection = new \Redis();
-        $redisConnection->connect($host, $port ?: 6379);
-        $cache = new RedisAdapter($redisConnection);
+        // Use ArrayAdapter for testing when Redis is not available
+        $cache = new ArrayAdapter();
         $this->tokenService = new TokenService($cache);
     }
 
