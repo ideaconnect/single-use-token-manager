@@ -187,6 +187,15 @@ $token = $service->consumeToken($identifier->token);
 An empty identifier is rejected, and so is one made only of whitespace, which
 would otherwise slip through as a cache miss further down the line.
 
+The OpenAPI attribute is inert unless you install `zircote/swagger-php`, which
+is why this package does not require it. PHP does not load an attribute class
+until something reflects over it, so the attribute costs nothing when the
+generator is absent. Install it when you want the schema:
+
+```bash
+composer require --dev zircote/swagger-php
+```
+
 ## Layout
 
 ```

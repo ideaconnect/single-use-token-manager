@@ -196,6 +196,12 @@ final class TokenIdentifierTest extends TestCase
         self::assertContains($attribute, $names);
     }
 
+    /**
+     * The OpenAPI attribute is only instantiable because zircote/swagger-php is
+     * a development dependency here. It is deliberately not a runtime
+     * requirement, since an attribute nobody reflects over costs nothing, so do
+     * not read this test as a reason to move the package back into `require`.
+     */
     public function testEveryAttributeOnTheIdentifierCanBeInstantiated(): void
     {
         $property = new \ReflectionProperty(TokenIdentifier::class, 'token');
