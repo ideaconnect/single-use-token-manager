@@ -6,32 +6,7 @@ All notable changes to this project are recorded here. The format follows
 
 ## [Unreleased]
 
-### Changed
-
-- `idct/php-rapid-cache-client` is now required at `^1.1.1` for development.
-  1.1 adds `take()`, so the token service picks up atomic redemption from it
-  with no wiring, and the concurrency check exercises the real dependency rather
-  than a test fixture. 1.1.1 fixes a data-loss bug in that `take()`, so the
-  floor skips 1.1.0.
-
-### Changed
-
-- Cache capabilities are probed once in the `TokenService` constructor instead
-  of on every operation. A cache cannot gain or lose methods during its
-  lifetime, so the answer was being re-derived to reach a conclusion that could
-  not have changed. `supportsTagging()` and `supportsAtomicTake()` keep their
-  signatures and stay overridable, but now read a flag. A subclass that
-  overrides `getCache()` to return a *different kind* of cache must override
-  them too, which the `getCache()` docblock now says.
-
-### Fixed
-
-- The concurrency check no longer fails when the redeemer processes happen not
-  to overlap. Only the atomic half of it is deterministic; the plain-cache half
-  needs a real race, so it is now retried a few times before it counts as a
-  failure.
-
-## [2.0.0]
+## [2.0.0] - 2026-07-26
 
 A security release as much as a rename. Two of the changes below fix cases where
 the library did not deliver the single-use guarantee it exists to provide, so
@@ -88,6 +63,11 @@ upgrading is worth doing even if the rename is unwelcome. See
 - `Token::TYPE_ERROR` now describes the real rule. It said "alphanumeric" while
   rejecting uppercase.
 - The licence is BSD 3-Clause, was MIT.
+- Cache capabilities are probed once in the `TokenService` constructor rather
+  than on every operation. `supportsTagging()` and `supportsAtomicTake()` keep
+  their signatures and stay overridable, but now read a flag settled at
+  construction. A subclass overriding `getCache()` to return a *different kind*
+  of cache must override them too, which the `getCache()` docblock says.
 
 ### Removed
 
@@ -100,6 +80,9 @@ upgrading is worth doing even if the rename is unwelcome. See
 - The `zircote/swagger-php` constraint allowed `^4.0`, but `OpenApi\Attributes`
   does not exist before 4.1.0, so the declared floor never worked.
 - Development scaffolding is no longer shipped in the Composer dist archive.
+- The concurrency check no longer fails when the redeemer processes happen not
+  to overlap. Only its atomic half is deterministic; the plain-cache half needs
+  a real race, so it is retried a few times before counting as a failure.
 
 ## Upgrading from 1.x
 
