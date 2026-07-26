@@ -1,20 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" backupGlobals="false" bootstrap="vendor/autoload.php" verbose="true" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd">
-  <extensions>
-      <extension class="GryfOSS\Tests\SingleUseTokenManager\BypassFinalHook"/>
-  </extensions>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.5/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         cacheDirectory=".phpunit.cache"
+         backupGlobals="false"
+         colors="true"
+         failOnRisky="true"
+         failOnWarning="true"
+         beStrictAboutOutputDuringTests="true"
+         requireCoverageMetadata="true"
+         beStrictAboutCoverageMetadata="true">
+  <testsuites>
+    <testsuite name="Unit">
+      <directory suffix="Test.php">tests/Unit</directory>
+    </testsuite>
+  </testsuites>
+  <source>
+    <include>
+      <directory suffix=".php">src</directory>
+    </include>
+  </source>
   <coverage>
     <report>
       <clover outputFile="report/coverage.xml"/>
-      <html outputDirectory="report/" lowUpperBound="35" highLowerBound="80"/>
-      <text outputFile="coverage.txt" showUncoveredFiles="false" showOnlySummary="true"/>
+      <html outputDirectory="report/html" lowUpperBound="35" highLowerBound="80"/>
+      <text outputFile="coverage.txt" showUncoveredFiles="true" showOnlySummary="false"/>
     </report>
-    <include>
-        <directory suffix=".php">src</directory>
-    </include>
   </coverage>
-  <testsuite name="SingleUseTokenManager TestSuite">
-    <directory suffix="Test.php">./tests</directory>
-  </testsuite>
   <logging/>
 </phpunit>

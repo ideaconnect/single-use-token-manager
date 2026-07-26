@@ -1,54 +1,45 @@
 <?php
 
+declare(strict_types=1);
+
 $finder = PhpCsFixer\Finder::create()
-    ->exclude('node_modules')
     ->exclude('vendor')
-    ->exclude('var')
+    ->exclude('report')
+    ->exclude('.infection')
+    ->exclude('.phpunit.cache')
     ->in(__DIR__);
 
-$config = new PhpCsFixer\Config();
-    $config->setRules([
+return (new PhpCsFixer\Config())
+    ->setRules([
         '@PSR12' => true,
-        'strict_param' => true,
-        'array_syntax' => ['syntax' => 'short'],
         '@Symfony' => true,
-        'full_opening_tag' => true,
-        'declare_strict_types' => true,
-        'align_multiline_comment' => true,
         'array_indentation' => true,
         'array_push' => true,
+        'array_syntax' => ['syntax' => 'short'],
         'backtick_to_shell_exec' => true,
-        'binary_operator_spaces' => true,
-        'blank_line_after_namespace' => true,
-        'blank_line_after_opening_tag' => true,
-        'braces' => true,
         'combine_consecutive_issets' => true,
         'combine_consecutive_unsets' => true,
-        'compact_nullable_typehint' => true,
-        'concat_space' => true,
-        'constant_case' => true,
+        'compact_nullable_type_declaration' => true,
+        'concat_space' => ['spacing' => 'none'],
         'date_time_immutable' => true,
+        'declare_strict_types' => true,
         'dir_constant' => true,
-        '@DoctrineAnnotation' => true,
         'ereg_to_preg' => true,
-        'encoding' => true,
         'heredoc_indentation' => true,
         'heredoc_to_nowdoc' => true,
-        'protected_to_private' => false,
         'is_null' => true,
-        'mb_str_functions' => true,
         'method_chaining_indentation' => true,
         'multiline_comment_opening_closing' => true,
-        'native_function_invocation' => false,
-        'native_function_type_declaration_casing' => true,
         'native_function_casing' => true,
-        'native_constant_invocation' => false,
+        'native_type_declaration_casing' => true,
+        'ordered_imports' => ['sort_algorithm' => 'alpha'],
+        'protected_to_private' => false,
         'strict_comparison' => true,
+        'strict_param' => true,
         'ternary_to_null_coalescing' => true,
-        'use_arrow_functions' => true
+        'trailing_comma_in_multiline' => ['elements' => ['arguments', 'arrays', 'match', 'parameters']],
+        'use_arrow_functions' => true,
     ])
-    ->setIndent("    ")
+    ->setIndent('    ')
     ->setLineEnding("\n")
     ->setFinder($finder);
-
-return $config;

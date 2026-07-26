@@ -2,170 +2,187 @@
 
 declare(strict_types=1);
 
-namespace GryfOSS\SingleUseTokenManager;
+namespace IDCT\SingleUseTokenManager;
 
-use Psr\Cache\CacheItemPoolInterface;
-use Symfony\Component\Cache\Adapter\TagAwareAdapterInterface;
-use Symfony\Component\Cache\CacheItem;
+use IDCT\SingleUseTokenManager\Contract\TaggedCacheInterface;
+use IDCT\SingleUseTokenManager\Contract\TokenInterface;
+use IDCT\SingleUseTokenManager\Contract\TokenServiceInterface;
+use IDCT\SingleUseTokenManager\Exception\TokenStorageException;
+use IDCT\SingleUseTokenManager\Model\Token;
+use Psr\SimpleCache\CacheInterface;
 
 /**
- * Single-use token management service.
+ * Single-use token manager backed by a PSR-16 cache.
  *
- * This service provides functionality to create, consume, and manage single-use tokens
- * using PSR-6 compatible cache adapters. Tokens are automatically assigned unique
- * identifiers and can be consumed only once (unless explicitly kept in cache).
+ * Tokens are stored as cache entries keyed by {@see TokenServiceInterface::CACHE_KEY}
+ * plus the token identifier. Expiry is delegated to the cache, so a token given
+ * a time-to-live disappears on its own without any sweeping job.
  *
- * The service supports both tag-aware and regular cache adapters:
- * - Tag-aware adapters (like Redis with tag support) allow efficient bulk operations
- * - Regular adapters fall back to full cache clearing for bulk operations
+ * Any PSR-16 implementation will do. When the injected cache also supports
+ * tagging, the service stores every token under
+ * {@see TokenServiceInterface::CACHE_TAG} and clears tokens by that tag, which
+ * leaves the rest of the pool alone. `idct/php-rapid-cache-client` is such a
+ * cache; see {@see supportsTagging()} for how the capability is detected.
  *
- * @author GryfOSS Team
+ * @author IDCT
+ *
  * @since 1.0.0
  */
-final class TokenService implements TokenServiceInterface
+class TokenService implements TokenServiceInterface
 {
     /**
-     * Initializes the token service with a cache adapter.
+     * Initialises the service with the cache that will hold the tokens.
      *
-     * The cache adapter should implement PSR-6 CacheItemPoolInterface.
-     * For optimal performance and bulk operations support, consider using
-     * a TagAwareAdapterInterface implementation.
+     * No connection is opened here. Whether the cache connects lazily or eagerly
+     * is entirely up to the implementation being injected.
      *
-     * @param CacheItemPoolInterface $cache The cache adapter to use for token storage
+     * @param CacheInterface $cache PSR-16 cache used for token storage; give it
+     *                              a dedicated pool if you intend to call
+     *                              {@see clearAllTokens()} on a cache without
+     *                              tagging support
      */
     public function __construct(
-        protected CacheItemPoolInterface $cache
-        ) {
+        protected CacheInterface $cache,
+    ) {
     }
 
     /**
-     * Creates a new single-use token with the specified type and payload.
+     * Issues a new token and stores it in the cache.
      *
-     * Generates a unique identifier for the token and stores it in the cache.
-     * The token can optionally have a time-to-live (TTL) value for automatic expiration.
+     * When the cache supports tagging the token is written under
+     * {@see TokenServiceInterface::CACHE_TAG} so that
+     * {@see clearAllTokens()} can later drop tokens without touching anything
+     * else in the pool.
      *
-     * If the cache adapter supports tags (TagAwareAdapterInterface), the token
-     * will be tagged for efficient bulk operations.
+     * @param string   $type    token type: lowercase letters and digits, at
+     *                          most 16 characters
+     * @param mixed    $payload optional data to carry with the token; it must
+     *                          survive the cache's serialisation
+     * @param int|null $ttl     lifetime in seconds, or null to let the cache
+     *                          decide how long to keep the entry
      *
-     * @param string $type The token type identifier (e.g., 'password_reset', 'email_verification')
-     * @param mixed $payload Optional data to associate with the token
-     * @param int|null $ttl Optional time-to-live in seconds. If null, token never expires
+     * @return TokenInterface the created token, carrying its unique identifier
      *
-     * @return TokenInterface The created token with unique identifier
-     *
-     * @throws \Psr\Cache\InvalidArgumentException If the cache key is invalid
+     * @throws \InvalidArgumentException                 if the token type is not acceptable
+     * @throws TokenStorageException                     if the cache refused to store the token
+     * @throws \Psr\SimpleCache\InvalidArgumentException if the cache key is not a legal value
      */
-    public function createToken(string $type, $payload = null, ?int $ttl = null): TokenInterface
+    public function createToken(string $type, mixed $payload = null, ?int $ttl = null): TokenInterface
     {
         $token = new Token($type, $payload);
         $cache = $this->getCache();
-        $item = $cache->getItem($this->buildKey($token->getUid()));
-        $item->set($token);
+        $key = $this->buildKey($token->getUid());
 
-        if ($ttl !== null) {
-            $item->expiresAfter($ttl);
+        $stored = $this->supportsTagging($cache)
+            ? $cache->setTagged($key, $token, static::CACHE_TAG, $ttl)
+            : $cache->set($key, $token, $ttl);
+
+        if (false === $stored) {
+            throw TokenStorageException::forKey($key);
         }
-
-        // Add tags if the cache adapter supports it
-        if ($cache instanceof TagAwareAdapterInterface && method_exists($item, 'tag')) {
-            $item->tag([static::CACHE_TAG]);
-        }
-
-        $cache->save($item);
 
         return $token;
     }
 
     /**
-     * Consumes a token by its unique identifier.
+     * Redeems a token by its unique identifier.
      *
-     * Retrieves and optionally removes a token from the cache. By default,
-     * tokens are single-use and will be deleted after consumption. Set
-     * $keepToken to true to keep the token in cache for multiple uses.
+     * A missing, expired or unrecognisable entry all produce null, so callers
+     * only need the one check. The entry is deleted as it is read unless
+     * `$keepToken` says otherwise, which is what makes a token single use.
      *
-     * @param string $uid The unique identifier of the token to consume
-     * @param bool $keepToken Whether to keep the token in cache after consumption (default: false)
+     * @param string $uid       unique identifier of the token to redeem
+     * @param bool   $keepToken true to leave the token in the cache so it can
+     *                          be redeemed again
      *
-     * @return TokenInterface|null The consumed token, or null if not found or expired
+     * @return TokenInterface|null the redeemed token, or null when no live
+     *                             token is stored under that identifier
      *
-     * @throws \Psr\Cache\InvalidArgumentException If the cache key is invalid
+     * @throws \Psr\SimpleCache\InvalidArgumentException if the cache key is not a legal value
      */
     public function consumeToken(string $uid, bool $keepToken = false): ?TokenInterface
     {
         $key = $this->buildKey($uid);
         $cache = $this->getCache();
-        $item = $cache->getItem($key);
-
-        if (!$item->isHit()) {
-            return null;
-        }
-
-        $token = $item->get();
+        $token = $cache->get($key);
 
         if (!$token instanceof TokenInterface) {
             return null;
         }
 
-        if (!$keepToken) {
-            $cache->deleteItem($key);
+        if (false === $keepToken) {
+            $cache->delete($key);
         }
 
         return $token;
     }
 
     /**
-     * Clears all tokens from the cache.
+     * Drops every token the service is responsible for.
      *
-     * The behavior depends on the cache adapter type:
-     * - Tag-aware adapters: Only tokens are cleared using tag invalidation
-     * - Regular adapters: The entire cache is cleared (affects all cached items!)
+     * On a cache that supports tagging only the tagged tokens go. On a plain
+     * PSR-16 cache the entire pool is emptied, since `clear()` is the only bulk
+     * operation the standard offers. That is destructive for anything else
+     * sharing the pool, so either give the service its own pool or use a cache
+     * with tagging support.
      *
-     * WARNING: When using non-tag-aware adapters, this method will clear
-     * ALL items in the cache pool, not just tokens. Use with caution in
-     * shared cache environments.
-     *
-     * @return bool True if the operation was successful, false otherwise
-     *
-     * @throws \Psr\Cache\InvalidArgumentException If tag invalidation fails
+     * @return bool true when the tokens were dropped, false otherwise
      */
     public function clearAllTokens(): bool
     {
         $cache = $this->getCache();
 
-        // If the cache adapter supports tags, use tag-based invalidation
-        if ($cache instanceof TagAwareAdapterInterface) {
-            return $cache->invalidateTags([static::CACHE_TAG]);
+        if ($this->supportsTagging($cache)) {
+            return $cache->clearByTag(static::CACHE_TAG);
         }
 
-        // Otherwise, clear the entire cache pool
-        // WARNING: This will clear ALL cache items, not just tokens!
         return $cache->clear();
     }
 
     /**
-     * Returns the configured cache adapter.
+     * Returns the cache the service was constructed with.
      *
-     * Provides access to the underlying cache implementation for
-     * internal operations. This method is protected to maintain
-     * encapsulation while allowing extension by subclasses.
+     * Kept protected so a subclass can swap in a different pool, for instance
+     * one resolved per tenant, without the rest of the class changing.
      *
-     * @return CacheItemPoolInterface The cache adapter instance
+     * @return CacheInterface the PSR-16 cache holding the tokens
      */
-    protected function getCache(): CacheItemPoolInterface
+    protected function getCache(): CacheInterface
     {
         return $this->cache;
     }
 
     /**
-     * Builds a cache key for the given token UID.
+     * Reports whether the given cache can store and clear entries by tag.
      *
-     * Combines the configured cache key prefix with the token's unique
-     * identifier to create a cache key that's unlikely to collide with
-     * other cached items.
+     * The check is made on the methods rather than on
+     * {@see TaggedCacheInterface}, which covers both shapes at once: a cache
+     * implementing the contract necessarily carries the two methods, and a
+     * cache that merely exposes them is recognised as well. The second case is
+     * what lets `IDCT\Cache\RapidCacheClient` be used without this package
+     * depending on `idct/php-rapid-cache-client`.
      *
-     * @param string $uid The token's unique identifier
+     * Both methods are required. Being able to write a tag without being able
+     * to clear by one would leave {@see clearAllTokens()} with no way to reach
+     * the tokens it just tagged, so half an implementation is treated as none.
      *
-     * @return string The complete cache key for the token
+     * @param CacheInterface $cache cache to inspect
+     *
+     * @return bool true when both tagging methods are available
+     *
+     * @phpstan-assert-if-true TaggedCacheInterface $cache
+     */
+    protected function supportsTagging(CacheInterface $cache): bool
+    {
+        return method_exists($cache, 'setTagged') && method_exists($cache, 'clearByTag');
+    }
+
+    /**
+     * Turns a token identifier into the cache key the token is stored under.
+     *
+     * @param string $uid token's unique identifier
+     *
+     * @return string the prefixed cache key
      */
     protected function buildKey(string $uid): string
     {

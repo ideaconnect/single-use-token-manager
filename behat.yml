@@ -1,26 +1,47 @@
 default:
   suites:
-    array_adapter:
+    # The model suite needs nothing running: it exercises the token and the
+    # request object on their own.
+    model:
+      paths:
+        - '%paths.base%/features/model'
       contexts:
-        - GryfOSS\Tests\SingleUseTokenManager\Behat\TokenContext
-        - GryfOSS\Tests\SingleUseTokenManager\Behat\ArrayAdapterTokenServiceContext
-      filters:
-        tags: "@array"
+        - IDCT\Tests\SingleUseTokenManager\Behat\TokenContext
+        - IDCT\Tests\SingleUseTokenManager\Behat\TokenIdentifierContext
 
-    redis_tags:
+    # In-memory PSR-16 cache. No server, no tagging, so the plain clearing
+    # behaviour applies.
+    array_cache:
+      paths:
+        - '%paths.base%/features/service'
       contexts:
-        - GryfOSS\Tests\SingleUseTokenManager\Behat\TokenContext
-        - GryfOSS\Tests\SingleUseTokenManager\Behat\RedisTagsTokenServiceContext:
-            host: 'localhost'
+        - IDCT\Tests\SingleUseTokenManager\Behat\TokenServiceContext:
+            driver: array
+      filters:
+        tags: '~@tagging'
+
+    # Redis behind the Symfony PSR-16 wrapper. Persistent storage, still no
+    # tagging as far as the token service is concerned.
+    redis_no_tags:
+      paths:
+        - '%paths.base%/features/service'
+      contexts:
+        - IDCT\Tests\SingleUseTokenManager\Behat\TokenServiceContext:
+            driver: redis
+            host: '127.0.0.1'
             port: 6379
       filters:
-        tags: "@redis_tags"
+        tags: '~@tagging'
 
-    redis_no_tags:
+    # idct/php-rapid-cache-client against Valkey. Persistent storage with
+    # tagging, so clearing reaches the tokens and nothing else.
+    rapid_cache_tags:
+      paths:
+        - '%paths.base%/features/service'
       contexts:
-        - GryfOSS\Tests\SingleUseTokenManager\Behat\TokenContext
-        - GryfOSS\Tests\SingleUseTokenManager\Behat\RedisNoTagsTokenServiceContext:
-            host: 'localhost'
+        - IDCT\Tests\SingleUseTokenManager\Behat\TokenServiceContext:
+            driver: rapid_cache
+            host: '127.0.0.1'
             port: 6380
       filters:
-        tags: "@redis_no_tags"
+        tags: '~@untagged'

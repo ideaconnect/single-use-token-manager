@@ -1,45 +1,42 @@
-.PHONY: help install start stop test test-array test-redis-tags test-redis-no-tags test-unit test-full clean
+.PHONY: help install start stop clean test unit bdd bdd-memory mutation lint fix example
 
-# Default target
-help: ## Show this help message
-	@echo "Single Use Token Manager Test Management"
+help: ## Show this help
+	@echo "Single Use Token Manager"
 	@echo ""
-	@echo "Available targets:"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
 
-install: ## Install dependencies
+install: ## Install the dependencies
 	composer install
 
-start: ## Start Docker services
-	./test-runner.sh start
+start: ## Start the Redis and Valkey containers
+	composer cache:start
 
-stop: ## Stop Docker services
-	./test-runner.sh stop
+stop: ## Stop the containers
+	composer cache:stop
 
-test-array: ## Run ArrayAdapter tests
-	./test-runner.sh test array
+clean: ## Stop the containers and drop their volumes
+	composer cache:clean
 
-test-redis-tags: ## Run Redis with tags tests
-	./test-runner.sh test redis_tags
+unit: ## Run the unit tests with coverage
+	composer test:unit
 
-test-redis-no-tags: ## Run Redis without tags tests
-	./test-runner.sh test redis_no_tags
+bdd-memory: ## Run the functional tests that need no container
+	composer test:bdd:memory
 
-test-functional: ## Run all functional tests
-	./test-runner.sh test all
+bdd: ## Run every functional test, starting the containers first
+	composer test:bdd
 
-test-unit: ## Run PHPUnit tests
-	./test-runner.sh unit
+mutation: ## Run mutation testing
+	composer test:mutation
 
-test-full: ## Run all tests (unit + functional)
-	./test-runner.sh full
+lint: ## Report coding standard violations
+	composer lint
 
-clean: ## Stop services and clean up
-	./test-runner.sh clean
+fix: ## Apply the coding standard
+	composer fix
 
-# Development shortcuts
-dev-setup: install start ## Setup development environment
-	@echo "Development environment ready!"
+test: ## Run unit, functional and mutation tests
+	composer test
 
-dev-test: test-unit test-array ## Quick development test (unit + array)
-	@echo "Quick tests completed!"
+example: ## Run the example script
+	php example.php

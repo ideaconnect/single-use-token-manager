@@ -1,30 +1,24 @@
 services:
+  # Backs the redis_no_tags Behat suite through the Symfony PSR-16 wrapper.
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
-    command: redis-server --appendonly yes
-    volumes:
-      - single_use_token_manager_redis_data:/data
+    command: redis-server --save "" --appendonly no
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
+      interval: 2s
       timeout: 3s
-      retries: 5
+      retries: 15
 
-  redis-no-tags:
-    image: redis:7-alpine
+  # Backs the rapid_cache_tags Behat suite through idct/php-rapid-cache-client.
+  valkey:
+    image: valkey/valkey:7.2-alpine
     ports:
       - "6380:6379"
-    command: redis-server --appendonly yes
-    volumes:
-      - single_use_token_manager_redis_no_tags_data:/data
+    command: valkey-server --save "" --appendonly no
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 2s
       timeout: 3s
-      retries: 5
-
-volumes:
-  single_use_token_manager_redis_data:
-  single_use_token_manager_redis_no_tags_data:
+      retries: 15

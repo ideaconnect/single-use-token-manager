@@ -1,305 +1,250 @@
 # Single Use Token Manager
 
-[![Tests](https://github.com/GryfOSS/single-use-token-manager/workflows/Tests/badge.svg)](https://github.com/GryfOSS/single-use-token-manager/actions)
-[![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg?style=flat&logo=codecov)](https://github.com/GryfOSS/single-use-token-manager/actions)
-[![PHP Version](https://img.shields.io/badge/php-8.2%20%7C%208.3%20%7C%208.4-777BB4.svg?style=flat&logo=php&logoColor=white)](https://packagist.org/packages/gryfoss/single-use-token-manager)
-[![Symfony](https://img.shields.io/badge/symfony-6%20%7C%207-000000.svg?style=flat&logo=symfony)](https://symfony.com/)
-[![PSR-6](https://img.shields.io/badge/PSR-6-orange.svg?style=flat)](https://www.php-fig.org/psr/psr-6/)
-[![Docker](https://img.shields.io/badge/docker-supported-2496ED.svg?style=flat&logo=docker&logoColor=white)](docker-compose.yml)
-
+[![CI](https://github.com/ideaconnect/single-use-token-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/ideaconnect/single-use-token-manager/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg?style=flat)](https://github.com/ideaconnect/single-use-token-manager/actions/workflows/ci.yml)
+[![Mutation score](https://img.shields.io/badge/MSI-100%25-brightgreen.svg?style=flat)](https://github.com/ideaconnect/single-use-token-manager/actions/workflows/ci.yml)
+[![PHP](https://img.shields.io/badge/php-8.2%20%7C%208.3%20%7C%208.4%20%7C%208.5-777BB4.svg?style=flat&logo=php&logoColor=white)](https://www.php.net/)
+[![PSR-16](https://img.shields.io/badge/PSR-16-orange.svg?style=flat)](https://www.php-fig.org/psr/psr-16/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat)](LICENSE)
-[![Latest Stable Version](https://img.shields.io/packagist/v/gryfoss/single-use-token-manager.svg?style=flat&logo=packagist)](https://packagist.org/packages/gryfoss/single-use-token-manager)
-[![Total Downloads](https://img.shields.io/packagist/dt/gryfoss/single-use-token-manager.svg?style=flat&logo=packagist)](https://packagist.org/packages/gryfoss/single-use-token-manager)
+[![Latest version](https://img.shields.io/packagist/v/idct/single-use-token-manager.svg?style=flat&logo=packagist)](https://packagist.org/packages/idct/single-use-token-manager)
+[![Downloads](https://img.shields.io/packagist/dt/idct/single-use-token-manager.svg?style=flat&logo=packagist)](https://packagist.org/packages/idct/single-use-token-manager)
 
-A comprehensive single-use token management library using Symfony Cache with support for multiple cache adapters.
+Hand a user something they can redeem exactly once: a password reset link, an
+email confirmation, a one-off download, a payment callback that must not run
+twice. The library issues a token into a cache and takes it back out again, and
+the cache handles expiry, so there is no sweeping job to write and nothing to
+migrate.
 
-## Features
-
-- **Token Creation & Consumption**: Create unique single-use tokens with optional TTL and consume them
-- **Multiple Cache Adapters**: Support for ArrayAdapter, Redis with tags, and Redis without tags
-- **Tag-Aware Clearing**: Efficient token clearing with tag-aware adapters
-- **Full Test Coverage**: 100% unit test coverage with comprehensive functional tests
-- **Validation & Serialization**: Built-in validation and JSON serialization support
-- **Docker Integration**: Easy testing with Docker-based Redis instances
-- **Comprehensive Documentation**: Extensive PHPDoc documentation for all classes and methods
-- **Type Safety**: Full type declarations and strict typing throughout the codebase
+Storage is any [PSR-16](https://www.php-fig.org/psr/psr-16/) cache. When the
+cache also supports tagging, clearing tokens reaches the tokens and nothing
+else.
 
 ## Installation
 
 ```bash
-composer require gryfoss/single-use-token-manager
+composer require idct/single-use-token-manager
 ```
 
-## Quality & Compatibility
-
-- **🧪 Tests**: Automated testing with GitHub Actions across multiple PHP versions
-- **📊 Coverage**: 100% code coverage maintained with comprehensive unit and functional tests
-- **🐘 PHP Support**: Compatible with PHP 8.2, 8.3, and 8.4
-- **🎼 Symfony Integration**: Built on Symfony 6 & 7 components (Cache, Validator, Serializer, UID)
-- **📋 PSR Compliance**: Implements PSR-6 (Caching Interface) standards
-- **🐳 Docker Support**: Complete Docker Compose setup for testing environments
-- **📦 Stable Release**: Available on Packagist with semantic versioning
-- **📥 Community Adoption**: Tracked downloads and usage statistics
-- **📄 MIT License**: Free and open source with permissive licensing
-
-## Quality & Compatibility
-
-- **🧪 Tests**: Automated testing with GitHub Actions across multiple PHP versions
-- **📊 Coverage**: 100% code coverage maintained with comprehensive unit and functional tests
-- **🐘 PHP Support**: Compatible with PHP 8.2, 8.3, and 8.4
-- **🎼 Symfony Integration**: Built on Symfony 6 & 7 components (Cache, Validator, Serializer, UID)
-- **� PSR Compliance**: Implements PSR-6 (Caching Interface) standards
-- **�📦 Stable Release**: Available on Packagist with semantic versioning
-- **📥 Community Adoption**: Tracked downloads and usage statistics
-- **📄 MIT License**: Free and open source with permissive licensing
-
-## Requirements
-
-- PHP 8.2 or higher (tested on PHP 8.2, 8.3, and 8.4)
-- Redis extension (for Redis-based tests)
-- Docker and Docker Compose (for functional tests)
-
-## API Documentation
-
-All classes and methods include comprehensive PHPDoc documentation with:
-- Detailed descriptions of functionality
-- Parameter and return type documentation
-- Usage examples and best practices
-- Exception handling information
-- Implementation notes for different cache adapters
-
-### Core Classes
-
-- **`TokenServiceInterface`**: Defines the contract for token management services
-- **`TokenService`**: Main implementation with cache adapter support
-- **`TokenInterface`**: Contract for token objects
-- **`Token`**: Immutable token implementation with UUID v6 identifiers
-- **`TokenIdentifier`**: DTO for token identification with validation
-
-## Testing
-
-[![Tests](https://github.com/GryfOSS/single-use-token-manager/workflows/Tests/badge.svg)](https://github.com/GryfOSS/single-use-token-manager/actions) [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](https://github.com/GryfOSS/single-use-token-manager/actions)
-
-This project includes comprehensive testing with three different cache adapter scenarios:
-
-### Matrix Testing
-
-The GitHub Actions workflow tests the library against multiple PHP versions:
-- **PHP 8.2**: Minimum supported version
-- **PHP 8.3**: LTS version with coverage reporting
-- **PHP 8.4**: Latest stable version
-
-### Test Coverage
-
-Each PHP version runs:
-- ✅ **Unit Tests**: Complete test suite with 32 tests and 75 assertions
-- ✅ **Functional Tests**: All three cache adapter scenarios
-- ✅ **Coverage Verification**: 100% code coverage (validated on PHP 8.3)
-
-### Cache Adapter Testing
-
-### 1. ArrayAdapter (Offline Storage)
-- In-memory storage, no persistence
-- Ideal for development and unit testing
-- No external dependencies
-
-### 2. Redis with Tags (Online Storage + Tag Support)
-- Persistent Redis storage with tag support
-- Efficient token clearing using cache tags
-- Requires Redis server
-
-### 3. Redis without Tags (Online Storage, No Tag Support)
-- Persistent Redis storage without tag support
-- Full cache clearing for token management
-- Requires Redis server
-
-### GitHub Actions CI/CD
-
-The project includes automated testing via GitHub Actions that verifies:
-
-✅ **Unit Tests**: All 32 unit tests pass
-✅ **100% Code Coverage**: Automatically verified (build fails if not 100%)
-✅ **Functional Tests**: All cache adapters tested (ArrayAdapter, Redis+Tags, Redis-NoTags)
-
-**Workflows:**
-- `.github/workflows/ci.yml` - Main CI pipeline (focuses on the 3 core requirements)
-- `.github/workflows/test.yml` - Comprehensive testing with matrix
-- `.github/workflows/simple-test.yml` - Detailed multi-job pipeline
-
-### Local Coverage Verification
+You also need a PSR-16 cache. Two that work well:
 
 ```bash
-# Verify 100% coverage locally (same check as GitHub Actions)
-./verify-coverage.sh
+# Redis or Valkey, with tag support
+composer require idct/php-rapid-cache-client
+
+# Or wrap any Symfony PSR-6 adapter as PSR-16
+composer require symfony/cache
 ```
 
-
-### Manual Testing
-
-```bash
-# Start Docker services
-./test-runner.sh start
-
-# Run specific test suites
-./test-runner.sh test array           # ArrayAdapter tests
-./test-runner.sh test redis_tags      # Redis with tags tests
-./test-runner.sh test redis_no_tags   # Redis without tags tests
-./test-runner.sh test all             # All functional tests
-
-# Run unit tests
-./test-runner.sh unit
-
-# Run everything
-./test-runner.sh full
-
-# Clean up
-./test-runner.sh clean
-```
-
-### Composer Scripts
-
-```bash
-composer test:unit                    # Run unit tests with coverage
-composer test:functional-array        # Run ArrayAdapter tests
-composer test:functional-redis-tags   # Run Redis with tags tests
-composer test:functional-redis-no-tags # Run Redis without tags tests
-composer test:functional             # Run all functional tests
-composer test:full                   # Run all tests
-composer docker:start               # Start Docker services
-composer docker:stop                # Stop Docker services
-composer docker:clean               # Clean up Docker
-```
-
-## Architecture
-
-### Core Classes
-
-- **TokenService**: Main service implementing TokenServiceInterface
-- **Token**: Token entity with UUID, type, payload, and TTL
-- **TokenIdentifier**: DTO for token validation and serialization
-- **TokenInterface**: Contract for token objects
-
-### Cache Strategy
-
-The service automatically detects cache adapter capabilities:
-
-- **Tag-Aware Adapters**: Use cache tags for efficient selective clearing
-- **Non-Tag-Aware Adapters**: Use full cache pool clearing
-- **ArrayAdapter**: In-memory storage for development/testing
-
-### Validation & Serialization
-
-- **Symfony Validator**: Attribute-based validation (NotBlank, NotNull, Type)
-- **Symfony Serializer**: JSON serialization with SerializedName attributes
-- **OpenAPI Integration**: API documentation attributes
-
-## Usage
+## Getting started
 
 ```php
-use GryfOSS\SingleUseTokenManager\TokenService;
+use IDCT\SingleUseTokenManager\TokenService;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
+use Symfony\Component\Cache\Psr16Cache;
 
-// Create service with ArrayAdapter
-$cache = new ArrayAdapter();
-$tokenService = new TokenService($cache);
+$service = new TokenService(new Psr16Cache(new ArrayAdapter()));
 
-// Create a token
-$token = $tokenService->createToken('user_session', ['user_id' => 123], 3600);
+// Issue a token that lives for an hour.
+$token = $service->createToken('reset', ['user_id' => 123], 3600);
 
-// Consume the token
-$consumedToken = $tokenService->consumeToken($token->getUid());
+$token->getUid();     // '1efb1c4e-0f7a-6c1a-9b2f-0242ac120002'
+$token->getType();    // 'reset'
+$token->getPayload(); // ['user_id' => 123]
 
-// Clear all tokens
-$tokenService->clearAllTokens();
+// Redeem it. The token is removed from the cache as it is returned.
+$redeemed = $service->consumeToken($token->getUid());
+
+// A second attempt finds nothing, which is what makes it single use.
+$service->consumeToken($token->getUid()); // null
 ```
 
-### Advanced Usage
+`example.php` in the repository walks through the same ground in more detail and
+runs as it is:
+
+```bash
+composer install
+php example.php
+```
+
+## How it works
+
+A token is stored as one cache entry under the key `TKN_` plus its identifier.
+The identifier is a UUID v6, which is time ordered, so tokens issued close
+together sit close together in the cache index. Expiry is the cache's job: a
+lifetime handed to `createToken()` goes straight through to the PSR-16 write, so
+an expired token simply is not there any more.
+
+`consumeToken()` reads the entry and deletes it in the same call. It returns
+null for a token that was never issued, one that has expired, one already
+redeemed, and one whose cache entry turned out to hold something else, so
+calling code only needs the single null check.
+
+## The API
+
+### `TokenService`
+
+| Method | What it does |
+| --- | --- |
+| `createToken(string $type, mixed $payload = null, ?int $ttl = null): TokenInterface` | Issues a token and stores it. Throws `InvalidArgumentException` for an unusable type and `TokenStorageException` when the cache refuses the write. |
+| `consumeToken(string $uid, bool $keepToken = false): ?TokenInterface` | Redeems a token, removing it unless `$keepToken` says otherwise. Returns null when there is no live token under that identifier. |
+| `clearAllTokens(): bool` | Drops every token. See [Clearing tokens](#clearing-tokens) for what that costs on a cache without tagging. |
+
+### The token type
+
+A type is lowercase letters and digits, one to sixteen characters. That keeps it
+safe to put in a cache key or a URL without escaping. `reset`, `verify2fa` and
+`invite` are fine; `Password Reset`, `pass_reset` and an empty string are
+refused with an `InvalidArgumentException` before anything is written.
+
+### The payload
+
+The payload is whatever the code redeeming the token will need. It travels
+through the cache, so it has to survive that cache's serialisation. Arrays and
+plain objects are safe; open resources and closures are not.
+
+### Checking a token without spending it
+
+Pass `keepToken: true` to look a token up without redeeming it. Useful for
+rejecting a bad request before committing to the work behind it:
 
 ```php
-use GryfOSS\SingleUseTokenManager\TokenService;
-use GryfOSS\SingleUseTokenManager\TokenIdentifier;
-use Symfony\Component\Cache\Adapter\RedisTagAwareAdapter;
+if (null === $service->consumeToken($uid, keepToken: true)) {
+    throw new NotFoundHttpException();
+}
+
+// ... do the expensive part, then spend the token for real
+$token = $service->consumeToken($uid);
+```
+
+### Reporting a refused write
+
+PSR-16 write methods report failure by returning false rather than by throwing.
+A service that ignored that would hand back a token the cache never stored, and
+the user would be sent something they could never redeem. `createToken()` turns
+the false into a `TokenStorageException` instead.
+
+## Clearing tokens
+
+`clearAllTokens()` behaves differently depending on what the cache can do.
+
+**On a plain PSR-16 cache** the only bulk operation available is `clear()`,
+which empties the entire pool. Anything else sharing that pool goes with the
+tokens. Give the token service its own cache pool if that matters.
+
+**On a cache that supports tagging** every token is written under the tag `TKN`
+and clearing invalidates just that tag. Nothing else in the pool is touched.
+
+The service works this out on its own, by checking whether the cache exposes
+`setTagged()` and `clearByTag()`. No configuration and no wiring:
+
+```php
+use IDCT\Cache\RapidCacheClient;
+use IDCT\Cache\RedisConnectionConfig;
+use IDCT\SingleUseTokenManager\TokenService;
+
+$cache = new RapidCacheClient(new RedisConnectionConfig(host: '127.0.0.1', port: 6379));
+$cache->set('unrelated', 'some other value');
+
+$service = new TokenService($cache);
+$service->createToken('reset', ['user_id' => 123]);
+$service->clearAllTokens();
+
+$cache->get('unrelated'); // still 'some other value'
+```
+
+To declare the capability on a cache of your own, implement
+`IDCT\SingleUseTokenManager\Contract\TaggedCacheInterface`. Its two methods have
+the same signatures as the ones on `IDCT\Cache\CacheServiceInterface`, so a
+cache satisfying one satisfies the other, and this package keeps
+`idct/php-rapid-cache-client` an optional dependency rather than a required one.
+
+## Validating an identifier from a request
+
+`TokenIdentifier` is the request object an endpoint hydrates before redeeming. It
+carries Symfony Validator, Serializer and OpenAPI attributes, so the identifier
+is validated, named `token` in JSON, and documented in the API schema without
+the endpoint hand rolling any of it.
+
+```php
+use IDCT\SingleUseTokenManager\Model\TokenIdentifier;
 use Symfony\Component\Validator\Validation;
-
-// Redis with tag support
-$redis = new \Redis();
-$redis->connect('localhost', 6379);
-$cache = new RedisTagAwareAdapter($redis);
-$tokenService = new TokenService($cache);
-
-// Create multiple tokens
-$loginToken = $tokenService->createToken('login', ['user_id' => 123], 3600);
-$resetToken = $tokenService->createToken('reset', 'password-data', 1800);
-
-// Validate token identifier
-$tokenIdentifier = new TokenIdentifier();
-$tokenIdentifier->token = $loginToken->getUid();
 
 $validator = Validation::createValidatorBuilder()
     ->enableAttributeMapping()
     ->getValidator();
 
-$violations = $validator->validate($tokenIdentifier);
-if (count($violations) === 0) {
-    echo "Token is valid!";
+$identifier = new TokenIdentifier();
+$identifier->token = $request->get('token');
+
+if (count($validator->validate($identifier)) > 0) {
+    throw new BadRequestHttpException();
 }
 
-// Clear all tokens efficiently (uses tags)
-$tokenService->clearAllTokens();
+$token = $service->consumeToken($identifier->token);
 ```
 
-## Test Coverage
+An empty identifier is rejected, and so is one made only of whitespace, which
+would otherwise slip through as a cache miss further down the line.
 
-- **Unit Tests**: 32 tests, 75 assertions, 100% code coverage
-- **Functional Tests**: Multiple scenarios across 3 cache adapters
-- **Integration Tests**: Docker-based Redis testing
-- **Validation Tests**: Comprehensive constraint testing
-
-## Development
-
-### Docker Services
-
-The project includes Docker Compose configuration for:
-
-- **redis**: Redis instance on port 6379 (with tag support)
-- **redis-no-tags**: Redis instance on port 6380 (without tag support)
-
-### Test Structure
+## Layout
 
 ```
-tests/
-├── Behat/
-│   ├── ArrayAdapterTokenServiceContext.php
-│   ├── RedisTagsTokenServiceContext.php
-│   ├── RedisNoTagsTokenServiceContext.php
-│   ├── TokenContext.php
-│   └── TokenServiceContext.php (legacy)
-├── TokenServiceTest.php
-├── TokenTest.php
-└── TokenIdentifierTest.php
-
-features/
-├── token.feature
-├── tokenService.feature (legacy)
-├── tokenService-array.feature
-├── tokenService-redis-tags.feature
-└── tokenService-redis-no-tags.feature
+src/
+├── Contract/
+│   ├── TaggedCacheInterface.php    PSR-16 plus setTagged() and clearByTag()
+│   ├── TokenInterface.php          What a token guarantees
+│   └── TokenServiceInterface.php   What the service guarantees
+├── Exception/
+│   └── TokenStorageException.php   Raised when the cache refuses a write
+├── Model/
+│   ├── Token.php                   Immutable token with a UUID v6 identifier
+│   └── TokenIdentifier.php         Validated request object
+└── TokenService.php                The service itself
 ```
 
-## Badge Reference
+## Requirements
 
-| Badge | Description | Purpose |
-|-------|-------------|---------|
-| ![Tests](https://github.com/GryfOSS/single-use-token-manager/workflows/Tests/badge.svg) | CI/CD Pipeline Status | Shows if all tests pass across PHP 8.2, 8.3, 8.4 |
-| ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg) | Code Coverage | Indicates 100% test coverage maintained |
-| ![PHP](https://img.shields.io/badge/php-8.2%20%7C%208.3%20%7C%208.4-777BB4.svg) | PHP Version Support | Supported PHP versions for compatibility |
-| ![Symfony](https://img.shields.io/badge/symfony-6%20%7C%207-000000.svg) | Framework Integration | Built with Symfony components |
-| ![PSR-6](https://img.shields.io/badge/PSR-6-orange.svg) | Standards Compliance | Implements PSR-6 Caching Interface |
-| ![Docker](https://img.shields.io/badge/docker-supported-2496ED.svg) | Container Support | Docker Compose for testing environments |
-| ![License](https://img.shields.io/badge/License-MIT-yellow.svg) | License Type | MIT License for open source usage |
-| ![Version](https://img.shields.io/packagist/v/gryfoss/single-use-token-manager.svg) | Latest Release | Current stable version on Packagist |
-| ![Downloads](https://img.shields.io/packagist/dt/gryfoss/single-use-token-manager.svg) | Community Usage | Total package downloads |
+- PHP 8.2 or newer, tested on 8.2, 8.3, 8.4 and 8.5
+- A PSR-16 cache
+- Docker and Docker Compose, for the functional tests that need a server
 
-## License
+## Testing
 
-MIT License
+```bash
+composer install
+
+composer test:unit         # PHPUnit with coverage
+composer test:bdd:memory   # Behat, no container needed
+composer test:bdd          # Behat against every cache, starts the containers
+composer test:mutation     # Infection
+composer test              # all of the above
+composer lint              # coding standard
+```
+
+The suite holds three lines and the build fails below any of them: 100% line
+coverage, 100% method coverage, and a mutation score index of 100%.
+
+### What the functional tests cover
+
+The scenarios in `features/service` run unchanged against three different
+caches, because the service is meant to need nothing beyond PSR-16:
+
+| Suite | Cache | Tagging | Needs a server |
+| --- | --- | --- | --- |
+| `model` | none | not applicable | no |
+| `array_cache` | `Psr16Cache` over `ArrayAdapter` | no | no |
+| `redis_no_tags` | `Psr16Cache` over `RedisAdapter` | no | Redis on 6379 |
+| `rapid_cache_tags` | `RapidCacheClient` | yes | Valkey on 6380 |
+
+Run one at a time with `./vendor/bin/behat --suite=rapid_cache_tags`. The
+containers behind the last two come from `docker-compose.yml`:
+
+```bash
+composer cache:start   # start Redis and Valkey
+composer cache:stop    # stop them
+composer cache:clean   # stop them and drop the volumes
+```
+
+## Licence
+
+MIT. See [LICENSE](LICENSE).

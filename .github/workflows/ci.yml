@@ -1,0 +1,138 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  tests:
+    name: PHP ${{ matrix.php-version }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['8.2', '8.3', '8.4', '8.5']
+
+    services:
+      # Backs the redis_no_tags Behat suite through the Symfony PSR-16 wrapper.
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+      # Backs the rapid_cache_tags Behat suite through idct/php-rapid-cache-client.
+      valkey:
+        image: valkey/valkey:7.2-alpine
+        ports:
+          - 6380:6379
+        options: >-
+          --health-cmd "valkey-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      # phpredis has to be built with igbinary support, because the rapid cache
+      # client selects Redis::SERIALIZER_IGBINARY and would fail to connect
+      # without the constant being available.
+      - name: Setup PHP ${{ matrix.php-version }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: igbinary, json, mbstring, xdebug, redis-phpredis/phpredis@6.2.0
+          coverage: xdebug
+          tools: composer:v2
+        env:
+          REDIS_CONFIGURE_OPTS: '--enable-redis-igbinary'
+
+      - name: Report the environment
+        run: |
+          php -v
+          php -m | grep -E '(redis|igbinary|xdebug)'
+          php -r "echo 'Redis::SERIALIZER_IGBINARY: ', Redis::SERIALIZER_IGBINARY, PHP_EOL;"
+
+      - name: Validate composer.json
+        run: composer validate --strict
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-${{ matrix.php-version }}-${{ hashFiles('composer.json') }}
+          restore-keys: ${{ runner.os }}-php-${{ matrix.php-version }}-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Check the coding standard
+        run: composer lint
+
+      - name: Wait for Redis and Valkey
+        run: |
+          timeout 30 bash -c 'until (echo > /dev/tcp/127.0.0.1/6379) 2>/dev/null; do sleep 1; done'
+          timeout 30 bash -c 'until (echo > /dev/tcp/127.0.0.1/6380) 2>/dev/null; do sleep 1; done'
+
+      - name: Run unit tests with coverage
+        env:
+          XDEBUG_MODE: coverage
+        run: ./vendor/bin/phpunit --coverage-clover=coverage.xml --coverage-text
+
+      # The build fails below 100%, which is the level the suite is written to
+      # hold. Both figures are checked because a fully covered line can still
+      # hide an uncalled method.
+      - name: Require 100% coverage
+        run: |
+          php -r '
+            $xml = simplexml_load_file("coverage.xml");
+            $metrics = $xml->project->metrics;
+            foreach (["statements" => "coveredstatements", "methods" => "coveredmethods"] as $total => $covered) {
+                $all = (int) $metrics[$total];
+                $hit = (int) $metrics[$covered];
+                $percentage = $all > 0 ? round($hit / $all * 100, 2) : 100.0;
+                printf("%s coverage: %s%% (%d/%d)%s", $total, $percentage, $hit, $all, PHP_EOL);
+                if ($percentage < 100.0) {
+                    fwrite(STDERR, sprintf("Coverage of %s is below 100%%.%s", $total, PHP_EOL));
+                    exit(1);
+                }
+            }
+          '
+
+      - name: Run the model functional tests
+        run: ./vendor/bin/behat --strict --no-interaction --suite=model
+
+      - name: Run the functional tests against the in-memory cache
+        run: ./vendor/bin/behat --strict --no-interaction --suite=array_cache
+
+      - name: Run the functional tests against Redis without tagging
+        run: ./vendor/bin/behat --strict --no-interaction --suite=redis_no_tags
+
+      - name: Run the functional tests against the rapid cache client with tagging
+        run: ./vendor/bin/behat --strict --no-interaction --suite=rapid_cache_tags
+
+      # Mutation testing is slow and its result does not vary with the PHP
+      # version, so it runs once on the lowest supported one. Infection fails
+      # the build when the MSI drops below the thresholds in infection.json.
+      - name: Run mutation testing
+        if: matrix.php-version == '8.2'
+        env:
+          XDEBUG_MODE: coverage
+        run: ./vendor/bin/infection --threads=max --no-progress --no-interaction
+
+      - name: Upload the coverage report
+        if: matrix.php-version == '8.3'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml
+          retention-days: 30
