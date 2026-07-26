@@ -8,10 +8,18 @@ All notable changes to this project are recorded here. The format follows
 
 ### Changed
 
-- `idct/php-rapid-cache-client` is now required at `^1.1` for development. That
-  release adds `take()`, so the token service picks up atomic redemption from it
+- `idct/php-rapid-cache-client` is now required at `^1.1.1` for development.
+  1.1 adds `take()`, so the token service picks up atomic redemption from it
   with no wiring, and the concurrency check exercises the real dependency rather
-  than a test fixture.
+  than a test fixture. 1.1.1 fixes a data-loss bug in that `take()`, so the
+  floor skips 1.1.0.
+
+### Fixed
+
+- The concurrency check no longer fails when the redeemer processes happen not
+  to overlap. Only the atomic half of it is deterministic; the plain-cache half
+  needs a real race, so it is now retried a few times before it counts as a
+  failure.
 
 ## [2.0.0]
 

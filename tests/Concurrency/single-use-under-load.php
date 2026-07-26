@@ -40,6 +40,9 @@ const KEY_PREFIX = 'concurrency_';
 const DRIVER_ATOMIC = 'rapid_cache';
 const DRIVER_PLAIN = 'plain';
 
+/** How many times the plain-cache race may be retried before it counts as a failure. */
+const PLAIN_ROUNDS = 3;
+
 /**
  * Builds the cache the given driver names.
  */
@@ -140,12 +143,24 @@ if (1 !== $atomicWinners) {
     ++$failures;
 }
 
-$plainWinners = count_winners(DRIVER_PLAIN);
+// The atomic assertion above is deterministic: atomicity guarantees one winner
+// however the processes happen to interleave. This one is not. It needs the
+// redeemers to actually overlap, and on a loaded machine they may not, which
+// would fail the build for a scheduling accident rather than a defect. Demanding
+// only that the overlap shows up once across a few rounds keeps the
+// documentation honest without making the check a coin toss.
+$plainWinners = 0;
+for ($round = 0; $round < PLAIN_ROUNDS && $plainWinners <= 1; ++$round) {
+    $plainWinners = max($plainWinners, count_winners(DRIVER_PLAIN));
+}
+
 printf('plain PSR-16:       %d of %d redeemers won%s', $plainWinners, REDEEMERS, PHP_EOL);
 if ($plainWinners <= 1) {
     fwrite(STDERR, sprintf(
-        'FAILED: a plain cache was expected to let more than one redeemer through, got %d. '
-        .'If PSR-16 has gained an atomic take, update the README, which documents this limitation.%s',
+        'FAILED: a plain cache was expected to let more than one redeemer through, but the '
+        .'best of %d rounds was %d. Either the redeemers never overlapped, or PSR-16 has '
+        .'gained an atomic take and the README no longer describes reality.%s',
+        PLAIN_ROUNDS,
         $plainWinners,
         PHP_EOL,
     ));

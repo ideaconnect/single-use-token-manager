@@ -31,7 +31,7 @@
     "require-dev": {
         "behat/behat": "^3.31",
         "friendsofphp/php-cs-fixer": "^3.95",
-        "idct/php-rapid-cache-client": "^1.1",
+        "idct/php-rapid-cache-client": "^1.1.1",
         "infection/infection": "^0.32",
         "phpstan/phpstan": "^2.2",
         "phpstan/phpstan-phpunit": "^2.0",
