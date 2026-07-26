@@ -2,7 +2,7 @@
     "name": "idct/single-use-token-manager",
     "description": "Single-use token manager built on the PSR-16 simple cache contract, with optional tag based invalidation.",
     "type": "library",
-    "license": "MIT",
+    "license": "BSD-3-Clause",
     "keywords": [
         "token",
         "single-use",

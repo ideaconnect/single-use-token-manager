@@ -5,7 +5,7 @@
 [![Mutation score](https://img.shields.io/badge/MSI-100%25-brightgreen.svg?style=flat)](https://github.com/ideaconnect/single-use-token-manager/actions/workflows/ci.yml)
 [![PHP](https://img.shields.io/badge/php-8.2%20%7C%208.3%20%7C%208.4%20%7C%208.5-777BB4.svg?style=flat&logo=php&logoColor=white)](https://www.php.net/)
 [![PSR-16](https://img.shields.io/badge/PSR-16-orange.svg?style=flat)](https://www.php-fig.org/psr/psr-16/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat)](LICENSE)
+[![License: BSD-3-Clause](https://img.shields.io/badge/License-BSD--3--Clause-yellow.svg?style=flat)](LICENSE)
 [![Latest version](https://img.shields.io/packagist/v/idct/single-use-token-manager.svg?style=flat&logo=packagist)](https://packagist.org/packages/idct/single-use-token-manager)
 [![Downloads](https://img.shields.io/packagist/dt/idct/single-use-token-manager.svg?style=flat&logo=packagist)](https://packagist.org/packages/idct/single-use-token-manager)
 
@@ -247,4 +247,4 @@ composer cache:clean   # stop them and drop the volumes
 
 ## Licence
 
-MIT. See [LICENSE](LICENSE).
+BSD 3-Clause. See [LICENSE](LICENSE).
