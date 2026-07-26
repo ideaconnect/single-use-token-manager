@@ -122,6 +122,30 @@ final class TokenServiceContext implements Context
         $this->tokens[] = $this->service->createToken($type, 'payload', $ttl);
     }
 
+    #[When('I create a token of type :type identified by :uid')]
+    #[Given('I have created a token of type :type identified by :uid')]
+    public function iCreateATokenIdentifiedBy(string $type, string $uid): void
+    {
+        $this->tokens[] = $this->service->createToken($type, null, null, $uid);
+    }
+
+    #[When('I create a token of type :type identified by :uid with payload :payload')]
+    #[Given('I have created a token of type :type identified by :uid with payload :payload')]
+    public function iCreateATokenIdentifiedByWithPayload(string $type, string $uid, string $payload): void
+    {
+        $this->tokens[] = $this->service->createToken($type, $payload, null, $uid);
+    }
+
+    #[When('I create a token of type :type identified by the invalid identifier :uid')]
+    public function iCreateATokenOfTheInvalidIdentifier(string $type, string $uid): void
+    {
+        try {
+            $this->tokens[] = $this->service->createToken($type, null, null, $uid);
+        } catch (\InvalidArgumentException $exception) {
+            $this->refusal = $exception;
+        }
+    }
+
     #[Given('I have created :count tokens of type :type')]
     public function iHaveCreatedSeveralTokens(int $count, string $type): void
     {
@@ -209,6 +233,19 @@ final class TokenServiceContext implements Context
             '/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/',
             $this->lastToken()->getUid(),
         );
+    }
+
+    #[Then('the token identifier should be :uid')]
+    public function theTokenIdentifierShouldBe(string $uid): void
+    {
+        Assert::assertSame($uid, $this->lastToken()->getUid());
+    }
+
+    #[Then('the redeemed token identifier should be :uid')]
+    public function theRedeemedTokenIdentifierShouldBe(string $uid): void
+    {
+        Assert::assertNotNull($this->redeemed);
+        Assert::assertSame($uid, $this->redeemed->getUid());
     }
 
     #[Then('every token identifier should be different')]

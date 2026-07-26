@@ -25,6 +25,8 @@ final class TokenContext implements Context
 
     private mixed $payload = null;
 
+    private ?string $uid = null;
+
     private ?Token $token = null;
 
     private ?Token $otherToken = null;
@@ -39,6 +41,7 @@ final class TokenContext implements Context
     {
         $this->type = '';
         $this->payload = null;
+        $this->uid = null;
         $this->token = null;
         $this->otherToken = null;
         $this->refusal = null;
@@ -62,11 +65,17 @@ final class TokenContext implements Context
         $this->payload = null;
     }
 
+    #[Given('an identifier of :uid')]
+    public function anIdentifierOf(string $uid): void
+    {
+        $this->uid = $uid;
+    }
+
     #[When('I construct the token')]
     public function iConstructTheToken(): void
     {
         try {
-            $this->token = new Token($this->type, $this->payload);
+            $this->token = new Token($this->type, $this->payload, $this->uid);
         } catch (\InvalidArgumentException $exception) {
             $this->refusal = $exception;
         }
@@ -75,7 +84,7 @@ final class TokenContext implements Context
     #[When('I construct a second token of the same type')]
     public function iConstructASecondTokenOfTheSameType(): void
     {
-        $this->otherToken = new Token($this->type, $this->payload);
+        $this->otherToken = new Token($this->type, $this->payload, $this->uid);
     }
 
     #[Then('I should get a token')]
@@ -101,6 +110,31 @@ final class TokenContext implements Context
     {
         Assert::assertNotNull($this->refusal);
         Assert::assertSame(sprintf(Token::TYPE_ERROR, $this->type), $this->refusal->getMessage());
+    }
+
+    #[Then('the refusal should name the rejected identifier')]
+    public function theRefusalShouldNameTheRejectedIdentifier(): void
+    {
+        Assert::assertNotNull($this->refusal);
+        Assert::assertSame(
+            sprintf(Token::UID_ERROR, Token::RESERVED_UID_CHARS, (string) $this->uid),
+            $this->refusal->getMessage(),
+        );
+    }
+
+    #[Then('the token identifier should be :uid')]
+    public function theTokenIdentifierShouldBe(string $uid): void
+    {
+        Assert::assertNotNull($this->token);
+        Assert::assertSame($uid, $this->token->getUid());
+    }
+
+    #[Then('the two tokens should have the same identifier')]
+    public function theTwoTokensShouldHaveTheSameIdentifier(): void
+    {
+        Assert::assertNotNull($this->token);
+        Assert::assertNotNull($this->otherToken);
+        Assert::assertSame($this->token->getUid(), $this->otherToken->getUid());
     }
 
     #[Then('the token type should be :type')]

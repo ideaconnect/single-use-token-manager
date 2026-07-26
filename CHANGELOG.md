@@ -6,6 +6,52 @@ All notable changes to this project are recorded here. The format follows
 
 ## [Unreleased]
 
+## [4.0.0] - 2026-07-26
+
+Tokens can now be stored under an identifier the caller chooses, for the case
+where the redeeming request has nowhere to carry a random one. The default is
+unchanged: omit the new argument and a token still gets an unguessable UUID v4.
+
+This is a major only because `TokenServiceInterface::createToken()` gained a
+parameter. Callers need no change at all. Anyone who implements the interface
+themselves — rather than extending `TokenService` — has to add the argument to
+their signature.
+
+### Added
+
+- **`createToken()` accepts an optional `$uid`.** `createToken(string $type,
+  mixed $payload = null, ?int $ttl = null, ?string $uid = null)` stores the
+  token under the given identifier instead of a generated one. Writing an
+  identifier that already holds a token replaces it, which is what lets a flow
+  re-issue into the same slot. The reason this exists: a client that posts back
+  a fixed set of fields — an account id and a short code from an e-mail, say —
+  has nowhere to put a 36 character identifier, so the token has to be reachable
+  from data the caller already holds.
+
+  It is a real trade and the README says so at length under *Addressable
+  tokens*. A derived identifier is enumerable, so reaching the token proves
+  nothing: whatever authorises the action must travel in the payload and be
+  checked once the token comes back. Uniqueness also becomes the caller's
+  problem.
+
+- **`Token::__construct()` accepts an optional `$uid`** as its third argument,
+  with the same meaning. Supplied identifiers are rejected when empty or when
+  they carry one of the characters PSR-16 reserves (`{}()/\@:`) — the same set
+  `TokenService` already refuses in a namespace — so the failure names the
+  offending value instead of surfacing later as an opaque cache error.
+  `Token::RESERVED_UID_CHARS` and `Token::UID_ERROR` are public for callers that
+  want to pre-validate or match on the message.
+
+### Changed
+
+- **`TokenServiceInterface::createToken()` gained the `$uid` parameter.** The
+  only breaking change in this release, and only for code implementing the
+  interface directly.
+
+- `Token::$uid` is now a `string` rather than a `UuidV4`, since it no longer
+  always holds a UUID. `getUid()` returned a string before and returns one now,
+  so nothing changes for callers.
+
 ## [3.0.0] - 2026-07-26
 
 A dependency release. No class, method or behaviour changed, so the only reason
@@ -181,6 +227,7 @@ README's Concurrency section.
 whitespace is rejected where it previously passed. That was always a certain
 cache miss, but code relying on the old behaviour will see a new violation.
 
-[Unreleased]: https://github.com/ideaconnect/single-use-token-manager/compare/v3.0.0...HEAD
+[Unreleased]: https://github.com/ideaconnect/single-use-token-manager/compare/v4.0.0...HEAD
+[4.0.0]: https://github.com/ideaconnect/single-use-token-manager/compare/v3.0.0...v4.0.0
 [3.0.0]: https://github.com/ideaconnect/single-use-token-manager/compare/v2.0.0...v3.0.0
 [2.0.0]: https://github.com/ideaconnect/single-use-token-manager/releases/tag/v2.0.0

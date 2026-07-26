@@ -9,7 +9,7 @@ use IDCT\SingleUseTokenManager\Model\Token;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Uid\UuidV4;
+use Symfony\Component\Uid\Uuid;
 
 /**
  * Unit tests for the immutable token model.
@@ -90,15 +90,11 @@ final class TokenTest extends TestCase
         );
     }
 
-    public function testItReturnsTheStringFormOfItsOwnUuid(): void
+    public function testItReturnsTheStringFormOfTheUuidItGenerated(): void
     {
         $token = new Token('sometest');
-        $uuid = new UuidV4();
 
-        $reflectionProperty = (new \ReflectionClass(Token::class))->getProperty('uid');
-        $reflectionProperty->setValue($token, $uuid);
-
-        self::assertSame((string) $uuid, $token->getUid());
+        self::assertSame((string) Uuid::fromString($token->getUid()), $token->getUid());
     }
 
     public function testItGivesEveryTokenItsOwnUid(): void
@@ -220,5 +216,113 @@ final class TokenTest extends TestCase
         $this->expectExceptionMessage('Used `Reset`.');
 
         new Token('Reset');
+    }
+
+    public function testItKeepsASuppliedIdentifierVerbatim(): void
+    {
+        $token = new Token('sometest', null, 'reset.42');
+
+        self::assertSame('reset.42', $token->getUid());
+    }
+
+    /**
+     * A supplied identifier is the whole point of the feature, so it has to win
+     * over the generated one rather than being merged with it or appended to
+     * a prefix the caller cannot see.
+     */
+    public function testASuppliedIdentifierReplacesTheGeneratedOne(): void
+    {
+        $token = new Token('sometest', null, 'reset.42');
+
+        self::assertDoesNotMatchRegularExpression(
+            '/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/',
+            $token->getUid(),
+        );
+    }
+
+    /**
+     * Two tokens built with the same identifier are the same entry as far as
+     * any cache is concerned. The model does not police that — it cannot see
+     * the cache — so it must at least not quietly make them different.
+     */
+    public function testTwoTokensMayShareASuppliedIdentifier(): void
+    {
+        self::assertSame(
+            (new Token('sometest', 'first', 'reset.42'))->getUid(),
+            (new Token('sometest', 'second', 'reset.42'))->getUid(),
+        );
+    }
+
+    public function testAnExplicitNullIdentifierStillGeneratesOne(): void
+    {
+        $token = new Token('sometest', null, null);
+
+        self::assertMatchesRegularExpression(
+            '/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/',
+            $token->getUid(),
+        );
+    }
+
+    /**
+     * Identifiers the cache would refuse are caught here instead, where the
+     * caller can still see which value caused it.
+     *
+     * @return iterable<string, array{string}>
+     */
+    public static function rejectedIdentifierProvider(): iterable
+    {
+        yield 'empty' => [''];
+        yield 'opening brace' => ['reset{42'];
+        yield 'closing brace' => ['reset}42'];
+        yield 'opening parenthesis' => ['reset(42'];
+        yield 'closing parenthesis' => ['reset)42'];
+        yield 'forward slash' => ['reset/42'];
+        yield 'backslash' => ['reset\\42'];
+        yield 'at sign' => ['reset@42'];
+        yield 'colon' => ['reset:42'];
+    }
+
+    #[DataProvider('rejectedIdentifierProvider')]
+    public function testItRejectsAnUnusableIdentifier(string $uid): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage(sprintf(Token::UID_ERROR, Token::RESERVED_UID_CHARS, $uid));
+
+        new Token('sometest', null, $uid);
+    }
+
+    /**
+     * Everything outside the reserved set is the caller's business, including
+     * the dot and dash the library's own UUID identifiers already rely on.
+     *
+     * @return iterable<string, array{string}>
+     */
+    public static function acceptedIdentifierProvider(): iterable
+    {
+        yield 'single character' => ['a'];
+        yield 'dotted segments' => ['reset.42'];
+        yield 'dashed' => ['reset-42'];
+        yield 'underscored' => ['reset_42'];
+        yield 'uuid shaped' => ['3f2504e0-4f89-41d3-9a0c-0305e82c3301'];
+        yield 'uppercase' => ['RESET42'];
+        yield 'long' => [str_repeat('a', 512)];
+    }
+
+    #[DataProvider('acceptedIdentifierProvider')]
+    public function testItAcceptsAUsableIdentifier(string $uid): void
+    {
+        self::assertSame($uid, (new Token('sometest', null, $uid))->getUid());
+    }
+
+    /**
+     * The type is checked before the identifier, so a caller who got both
+     * wrong is told about the type first and does not have to fix them one
+     * round trip at a time in an order the library never documented.
+     */
+    public function testItReportsAnUnusableTypeBeforeAnUnusableIdentifier(): void
+    {
+        $this->expectExceptionMessage(sprintf(Token::TYPE_ERROR, 'Reset'));
+
+        new Token('Reset', null, '');
     }
 }

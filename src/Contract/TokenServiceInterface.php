@@ -45,20 +45,31 @@ interface TokenServiceInterface
      * Issues a new single-use token and stores it in the cache.
      *
      * The token receives a fresh unique identifier, so calling this method
-     * twice with identical arguments produces two distinct tokens.
+     * twice with identical arguments produces two distinct tokens — unless an
+     * identifier is supplied, in which case the second call replaces the first
+     * in the same cache entry.
      *
-     * @param string   $type    token type, used to categorise the token
-     * @param mixed    $payload optional data to carry with the token
-     * @param int|null $ttl     lifetime in seconds, or null to let the cache
-     *                          decide how long to keep the entry
+     * Supply `$uid` only when the request that will redeem the token has
+     * nowhere to carry a random identifier and the token therefore has to be
+     * reachable from data the caller already holds. It stops being a secret at
+     * that point, so whatever authorises the action belongs in the payload and
+     * must be checked once the token comes back. See
+     * {@see \IDCT\SingleUseTokenManager\Model\Token} for the full consequences.
+     *
+     * @param string      $type    token type, used to categorise the token
+     * @param mixed       $payload optional data to carry with the token
+     * @param int|null    $ttl     lifetime in seconds, or null to let the cache
+     *                             decide how long to keep the entry
+     * @param string|null $uid     identifier to store the token under, or null
+     *                             to receive an unguessable one
      *
      * @return TokenInterface the created token, carrying its unique identifier
      *
-     * @throws \InvalidArgumentException                 if the token type is not acceptable
+     * @throws \InvalidArgumentException                 if the token type or the supplied identifier is not acceptable
      * @throws TokenStorageException                     if the cache refused to store the token
      * @throws \Psr\SimpleCache\InvalidArgumentException if the cache key is not a legal value
      */
-    public function createToken(string $type, mixed $payload = null, ?int $ttl = null): TokenInterface;
+    public function createToken(string $type, mixed $payload = null, ?int $ttl = null, ?string $uid = null): TokenInterface;
 
     /**
      * Redeems a token by its unique identifier.

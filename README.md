@@ -91,7 +91,7 @@ callers arrive together is covered in [Concurrency](#concurrency).
 
 | Method | What it does |
 | --- | --- |
-| `createToken(string $type, mixed $payload = null, ?int $ttl = null): TokenInterface` | Issues a token and stores it. Throws `InvalidArgumentException` for an unusable type and `TokenStorageException` when the cache refuses the write. |
+| `createToken(string $type, mixed $payload = null, ?int $ttl = null, ?string $uid = null): TokenInterface` | Issues a token and stores it. Pass `$uid` only to make the token [addressable](#addressable-tokens); otherwise it gets an unguessable one. Throws `InvalidArgumentException` for an unusable type or identifier, and `TokenStorageException` when the cache refuses the write. |
 | `consumeToken(string $uid, bool $keepToken = false): ?TokenInterface` | Redeems a token, removing it unless `$keepToken` says otherwise. Returns null when there is no live token under that identifier. |
 | `clearAllTokens(): bool` | Drops every token. See [Clearing tokens](#clearing-tokens) for what that costs on a cache without tagging. |
 
@@ -187,6 +187,60 @@ So the identifier is a v4, which Symfony builds from `random_bytes()`. The cost
 is the loss of time ordering, which only ever bought cache index locality, and
 that is worth very little for entries fetched by exact key that expire on their
 own.
+
+## Addressable tokens
+
+Sometimes the request that redeems a token has nowhere to carry a random
+identifier. A mobile client posting back an account id and a six digit code the
+user copied out of an e-mail is the usual shape: the fields are fixed, none of
+them is 36 characters wide, and the client cannot be changed. The token still
+has to be findable.
+
+Pass `$uid` to `createToken()` and the token is stored under it:
+
+```php
+$service->createToken(
+    type: 'reset',
+    payload: ['code' => $code, 'email' => $newAddress],
+    ttl: 600,
+    uid: "reset.{$userId}",
+);
+
+// later, from {id, code} in the request body
+$token = $service->consumeToken("reset.{$userId}");
+```
+
+This is a deliberate trade, and it moves two duties onto you.
+
+**The identifier is no longer the secret.** Deriving it from a user id — or an
+order number, or anything else an attacker can enumerate — means reaching the
+token proves nothing at all. Whatever actually authorises the action has to
+travel in the payload and be checked *after* the token comes back:
+
+```php
+$token = $service->consumeToken("reset.{$userId}");
+
+if (null === $token || !hash_equals($token->getPayload()['code'], $submittedCode)) {
+    throw new AccessDeniedException();
+}
+```
+
+Compare that with the default: a random identifier is itself proof, so a
+non-null return is the whole check. Give the payload check the same care you
+would give a password comparison — `hash_equals`, and a rate limit on top,
+because a short code taken from an e-mail carries far less entropy than a v4.
+
+**Uniqueness becomes yours.** Two tokens built with the same identifier are one
+cache entry, and the second silently replaces the first. That is often what you
+want, since it gives a flow one live token per user and lets a resend overwrite
+what came before — but it is worth being deliberate about rather than surprised
+by.
+
+Identifiers are checked for the characters PSR-16 reserves (`{}()/\@:`) and for
+being empty, and rejected with `InvalidArgumentException` before anything
+reaches the cache. Everything else is yours to choose. The service namespace, if
+you set one, still applies, so two services sharing a pool cannot collide even
+on identical identifiers.
 
 ## Concurrency
 
