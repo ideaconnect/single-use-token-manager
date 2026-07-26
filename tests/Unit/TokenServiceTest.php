@@ -73,6 +73,90 @@ final class TokenServiceTest extends TestCase
         );
     }
 
+    public function testItNamespacesTheCacheKeyWhenAsked(): void
+    {
+        $service = new TokenService(new InMemoryCache(), 'tenant7_');
+
+        self::assertSame('tenant7_TKN_uid', $this->callProtected($service, 'buildKey', 'uid'));
+    }
+
+    public function testItNamespacesTheTagWhenAsked(): void
+    {
+        $service = new TokenService(new InMemoryCache(), 'tenant7_');
+
+        self::assertSame('tenant7_TKN', $this->callProtected($service, 'cacheTag'));
+    }
+
+    public function testItLeavesKeysAndTagsAloneWithoutANamespace(): void
+    {
+        $service = new TokenService(new InMemoryCache());
+
+        self::assertSame('TKN_uid', $this->callProtected($service, 'buildKey', 'uid'));
+        self::assertSame('TKN', $this->callProtected($service, 'cacheTag'));
+    }
+
+    /**
+     * Two services sharing one pool must not see each other's tokens, which is
+     * the whole point of the namespace.
+     */
+    public function testTokensOfOneNamespaceAreInvisibleToAnother(): void
+    {
+        $cache = new InMemoryCache();
+        $first = new TokenService($cache, 'first_');
+        $second = new TokenService($cache, 'second_');
+
+        $token = $first->createToken('testtype');
+
+        self::assertNull($second->consumeToken($token->getUid()));
+        self::assertNotNull($first->consumeToken($token->getUid()));
+    }
+
+    public function testClearingOneNamespaceLeavesTheOtherIntact(): void
+    {
+        $cache = new TaggedInMemoryCache();
+        $first = new TokenService($cache, 'first_');
+        $second = new TokenService($cache, 'second_');
+
+        $kept = $second->createToken('testtype');
+        $first->createToken('testtype');
+
+        self::assertTrue($first->clearAllTokens());
+        self::assertNotNull($second->consumeToken($kept->getUid()));
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function reservedNamespaceProvider(): iterable
+    {
+        yield 'brace' => ['ten{ant'];
+        yield 'parenthesis' => ['ten(ant'];
+        yield 'slash' => ['ten/ant'];
+        yield 'backslash' => ['ten\\ant'];
+        yield 'at sign' => ['ten@ant'];
+        yield 'colon' => ['ten:ant'];
+    }
+
+    #[DataProvider('reservedNamespaceProvider')]
+    public function testItRefusesANamespaceCarryingAReservedCharacter(string $namespace): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage(sprintf(
+            TokenService::NAMESPACE_ERROR,
+            TokenService::RESERVED_NAMESPACE_CHARS,
+            $namespace,
+        ));
+
+        new TokenService(new InMemoryCache(), $namespace);
+    }
+
+    public function testItAcceptsANamespaceOfOrdinaryCharacters(): void
+    {
+        $service = new TokenService(new InMemoryCache(), 'tenant-7.eu_');
+
+        self::assertSame('tenant-7.eu_TKN_uid', $this->callProtected($service, 'buildKey', 'uid'));
+    }
+
     public function testItCreatesATokenOfTheGivenType(): void
     {
         $service = new TokenService(new InMemoryCache());
@@ -625,9 +709,25 @@ final class TokenServiceTest extends TestCase
 
         $write = $cache->lastWrite();
         self::assertNotNull($write);
-        self::assertSame(TokenServiceInterface::CACHE_TAG, $write['tag']);
         self::assertTrue($service->clearAllTokens());
         self::assertNull($service->consumeToken($token->getUid()));
+    }
+
+    public function testASubclassCanChangeTheTag(): void
+    {
+        $cache = new TaggedInMemoryCache();
+        $service = new CustomisedTokenService($cache, $cache, true);
+
+        $token = $service->createToken('testtype');
+
+        $write = $cache->lastWrite();
+        self::assertNotNull($write);
+        self::assertSame(CustomisedTokenService::CUSTOM_TAG, $write['tag']);
+        self::assertSame(
+            [CustomisedTokenService::CUSTOM_PREFIX.$token->getUid()],
+            $cache->keysTaggedWith(CustomisedTokenService::CUSTOM_TAG),
+        );
+        self::assertSame([], $cache->keysTaggedWith(TokenServiceInterface::CACHE_TAG));
     }
 
     /**

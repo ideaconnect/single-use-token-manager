@@ -33,19 +33,44 @@ use Psr\SimpleCache\CacheInterface;
 class TokenService implements TokenServiceInterface
 {
     /**
+     * Characters PSR-16 reserves, which a namespace therefore may not contain.
+     *
+     * Rejecting them here beats letting the cache fail later on a key nobody
+     * can trace back to the namespace that produced it.
+     *
+     * @var string
+     */
+    public const RESERVED_NAMESPACE_CHARS = '{}()/\\@:';
+
+    /** @var string Message template used when a namespace is rejected */
+    public const NAMESPACE_ERROR = 'Namespace must not contain any of the PSR-16 reserved characters `%s`. Used `%s`.';
+
+    /**
      * Initialises the service with the cache that will hold the tokens.
      *
      * No connection is opened here. Whether the cache connects lazily or eagerly
      * is entirely up to the implementation being injected.
      *
-     * @param CacheInterface $cache PSR-16 cache used for token storage; give it
-     *                              a dedicated pool if you intend to call
-     *                              {@see clearAllTokens()} on a cache without
-     *                              tagging support
+     * @param CacheInterface $cache     PSR-16 cache used for token storage; give it
+     *                                  a dedicated pool if you intend to call
+     *                                  {@see clearAllTokens()} on a cache without
+     *                                  tagging support
+     * @param string         $namespace optional prefix separating this service's
+     *                                  tokens from those of another sharing the
+     *                                  same cache, for instance one per tenant.
+     *                                  Empty, the default, keeps the keys and the
+     *                                  tag exactly as earlier versions wrote them
+     *
+     * @throws \InvalidArgumentException if the namespace contains a character
+     *                                   PSR-16 reserves
      */
     public function __construct(
         protected CacheInterface $cache,
+        private readonly string $namespace = '',
     ) {
+        if ('' !== $namespace && false !== strpbrk($namespace, self::RESERVED_NAMESPACE_CHARS)) {
+            throw new \InvalidArgumentException(sprintf(self::NAMESPACE_ERROR, self::RESERVED_NAMESPACE_CHARS, $namespace));
+        }
     }
 
     /**
@@ -76,7 +101,7 @@ class TokenService implements TokenServiceInterface
         $key = $this->buildKey($token->getUid());
 
         $stored = $this->supportsTagging($cache)
-            ? $cache->setTagged($key, $token, static::CACHE_TAG, $ttl)
+            ? $cache->setTagged($key, $token, $this->cacheTag(), $ttl)
             : $cache->set($key, $token, $ttl);
 
         if (false === $stored) {
@@ -154,7 +179,7 @@ class TokenService implements TokenServiceInterface
         $cache = $this->getCache();
 
         if ($this->supportsTagging($cache)) {
-            return $cache->clearByTag(static::CACHE_TAG);
+            return $cache->clearByTag($this->cacheTag());
         }
 
         return $cache->clear();
@@ -226,6 +251,19 @@ class TokenService implements TokenServiceInterface
      */
     protected function buildKey(string $uid): string
     {
-        return static::CACHE_KEY.$uid;
+        return $this->namespace.static::CACHE_KEY.$uid;
+    }
+
+    /**
+     * Returns the tag this service files its tokens under.
+     *
+     * Namespaced alongside the keys, so that clearing one service's tokens on a
+     * shared pool cannot reach another's.
+     *
+     * @return string the tag used for tagged writes and tag invalidation
+     */
+    protected function cacheTag(): string
+    {
+        return $this->namespace.static::CACHE_TAG;
     }
 }

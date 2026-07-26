@@ -257,6 +257,34 @@ the same signatures as the ones on `IDCT\Cache\CacheServiceInterface`, so a
 cache satisfying one satisfies the other, and this package keeps
 `idct/php-rapid-cache-client` an optional dependency rather than a required one.
 
+## Sharing a cache between services
+
+By default every token service writes keys as `TKN_<uid>` and tags them `TKN`.
+Two services sharing one pool would therefore share a key space, and clearing
+one would clear the other. Pass a namespace to keep them apart:
+
+```php
+$resets  = new TokenService($cache, 'reset_');
+$invites = new TokenService($cache, 'invite_');
+
+$token = $resets->createToken('reset', ['user_id' => 123]);
+
+$invites->consumeToken($token->getUid());   // null, it is not theirs
+$invites->clearAllTokens();                 // leaves the reset tokens alone
+```
+
+The namespace prefixes both the key and the tag. Leaving it out keeps the keys
+byte for byte as earlier versions wrote them, so this is safe to adopt on an
+existing deployment.
+
+PSR-16 reserves the characters `{}()/\@:`, and a namespace containing any of
+them is refused at construction rather than left to fail later as an unreadable
+cache error.
+
+Note that on a cache without tagging `clearAllTokens()` still empties the whole
+pool, because `clear()` is all PSR-16 offers. The namespace separates the two
+services' keys, not their blast radius. See [Clearing tokens](#clearing-tokens).
+
 ## Validating an identifier from a request
 
 `TokenIdentifier` is the request object an endpoint hydrates before redeeming. It

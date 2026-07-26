@@ -20,6 +20,9 @@ final class CustomisedTokenService extends TokenService
     /** @var string Prefix used in place of the inherited cache key prefix */
     public const CUSTOM_PREFIX = 'CUSTOM_';
 
+    /** @var string Tag used in place of the inherited one */
+    public const CUSTOM_TAG = 'CUSTOM';
+
     /**
      * @param CacheInterface $cache           cache the parent is constructed with, and
      *                                        which the overridden getCache() ignores
@@ -54,5 +57,10 @@ final class CustomisedTokenService extends TokenService
     protected function buildKey(string $uid): string
     {
         return self::CUSTOM_PREFIX.$uid;
+    }
+
+    protected function cacheTag(): string
+    {
+        return self::CUSTOM_TAG;
     }
 }
