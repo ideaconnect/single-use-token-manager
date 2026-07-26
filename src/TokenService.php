@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace IDCT\SingleUseTokenManager;
 
+use IDCT\SingleUseTokenManager\Contract\AtomicCacheInterface;
 use IDCT\SingleUseTokenManager\Contract\TaggedCacheInterface;
 use IDCT\SingleUseTokenManager\Contract\TokenInterface;
 use IDCT\SingleUseTokenManager\Contract\TokenServiceInterface;
+use IDCT\SingleUseTokenManager\Exception\TokenRemovalException;
 use IDCT\SingleUseTokenManager\Exception\TokenStorageException;
 use IDCT\SingleUseTokenManager\Model\Token;
 use Psr\SimpleCache\CacheInterface;
@@ -88,8 +90,16 @@ class TokenService implements TokenServiceInterface
      * Redeems a token by its unique identifier.
      *
      * A missing, expired or unrecognisable entry all produce null, so callers
-     * only need the one check. The entry is deleted as it is read unless
+     * only need the one check. The entry is removed as it is read unless
      * `$keepToken` says otherwise, which is what makes a token single use.
+     *
+     * How well that holds under concurrency depends on the cache. When it
+     * implements {@see AtomicCacheInterface} the read and the removal are one
+     * operation, so exactly one of several simultaneous callers can win. On a
+     * plain PSR-16 cache they are two operations with a gap in between, and
+     * every caller arriving inside that gap redeems the same token. If more
+     * than one request can present the same token at once, and the consequence
+     * of both succeeding matters, use a cache that can take atomically.
      *
      * @param string $uid       unique identifier of the token to redeem
      * @param bool   $keepToken true to leave the token in the cache so it can
@@ -98,20 +108,31 @@ class TokenService implements TokenServiceInterface
      * @return TokenInterface|null the redeemed token, or null when no live
      *                             token is stored under that identifier
      *
+     * @throws TokenRemovalException                     if the cache refused to remove a redeemed token
      * @throws \Psr\SimpleCache\InvalidArgumentException if the cache key is not a legal value
      */
     public function consumeToken(string $uid, bool $keepToken = false): ?TokenInterface
     {
         $key = $this->buildKey($uid);
         $cache = $this->getCache();
+
+        if (false === $keepToken && $this->supportsAtomicTake($cache)) {
+            $taken = $cache->take($key);
+
+            return $taken instanceof TokenInterface ? $taken : null;
+        }
+
         $token = $cache->get($key);
 
         if (!$token instanceof TokenInterface) {
             return null;
         }
 
-        if (false === $keepToken) {
-            $cache->delete($key);
+        // A refused removal leaves the token redeemable while the caller is
+        // told it was spent, so it is reported rather than swallowed, for the
+        // same reason createToken() reports a refused write.
+        if (false === $keepToken && false === $cache->delete($key)) {
+            throw TokenRemovalException::forKey($key);
         }
 
         return $token;
@@ -175,6 +196,25 @@ class TokenService implements TokenServiceInterface
     protected function supportsTagging(CacheInterface $cache): bool
     {
         return method_exists($cache, 'setTagged') && method_exists($cache, 'clearByTag');
+    }
+
+    /**
+     * Reports whether the given cache can read and remove an entry in one go.
+     *
+     * Detected on the method rather than on {@see AtomicCacheInterface}, for
+     * the same reason tagging is: a cache implementing the contract carries the
+     * method anyway, and a cache that merely exposes a compatible `take()` is
+     * just as usable without having to know this package exists.
+     *
+     * @param CacheInterface $cache cache to inspect
+     *
+     * @return bool true when the cache can take atomically
+     *
+     * @phpstan-assert-if-true AtomicCacheInterface $cache
+     */
+    protected function supportsAtomicTake(CacheInterface $cache): bool
+    {
+        return method_exists($cache, 'take');
     }
 
     /**

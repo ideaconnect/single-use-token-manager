@@ -147,6 +147,15 @@ jobs:
       - name: Run the functional tests against the rapid cache client with tagging
         run: ./vendor/bin/behat --strict --no-interaction --suite=rapid_cache_tags
 
+      - name: Run the functional tests against an atomic cache
+        run: ./vendor/bin/behat --strict --no-interaction --suite=redis_atomic
+
+      # Spawns real processes that all go for one token at the same instant.
+      # A cache that can take atomically must yield exactly one winner, which
+      # is the guard against the single-use guarantee silently regressing.
+      - name: Prove single use holds under concurrency
+        run: php tests/Concurrency/single-use-under-load.php
+
       # Mutation testing is slow and its result does not vary with the PHP
       # version, so it runs once on the lowest supported one. Infection fails
       # the build when the MSI drops below the thresholds in infection.json.

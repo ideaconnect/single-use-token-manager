@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace IDCT\Tests\SingleUseTokenManager\Unit;
 
+use IDCT\SingleUseTokenManager\Contract\AtomicCacheInterface;
 use IDCT\SingleUseTokenManager\Contract\TaggedCacheInterface;
 use IDCT\SingleUseTokenManager\Contract\TokenServiceInterface;
+use IDCT\SingleUseTokenManager\Exception\TokenRemovalException;
 use IDCT\SingleUseTokenManager\Exception\TokenStorageException;
 use IDCT\SingleUseTokenManager\Model\Token;
 use IDCT\SingleUseTokenManager\TokenService;
+use IDCT\Tests\SingleUseTokenManager\Double\AtomicInMemoryCache;
 use IDCT\Tests\SingleUseTokenManager\Double\ClearByTagOnlyCache;
 use IDCT\Tests\SingleUseTokenManager\Double\CustomisedTokenService;
+use IDCT\Tests\SingleUseTokenManager\Double\DuckTypedAtomicCache;
 use IDCT\Tests\SingleUseTokenManager\Double\DuckTypedTaggedCache;
 use IDCT\Tests\SingleUseTokenManager\Double\InMemoryCache;
 use IDCT\Tests\SingleUseTokenManager\Double\SetTaggedOnlyCache;
@@ -25,6 +29,7 @@ use Psr\SimpleCache\CacheInterface;
  * Unit tests for the PSR-16 backed token service.
  */
 #[CoversClass(TokenService::class)]
+#[CoversClass(TokenRemovalException::class)]
 #[CoversClass(TokenStorageException::class)]
 #[UsesClass(Token::class)]
 final class TokenServiceTest extends TestCase
@@ -217,6 +222,7 @@ final class TokenServiceTest extends TestCase
             ->method('get')
             ->with('TKN_'.$token->getUid())
             ->willReturn($token);
+        $cache->method('delete')->willReturn(true);
 
         self::assertSame($token, (new TokenService($cache))->consumeToken($token->getUid()));
     }
@@ -238,7 +244,8 @@ final class TokenServiceTest extends TestCase
         $cache->method('get')->willReturn($token);
         $cache->expects($this->once())
             ->method('delete')
-            ->with('TKN_'.$token->getUid());
+            ->with('TKN_'.$token->getUid())
+            ->willReturn(true);
 
         (new TokenService($cache))->consumeToken($token->getUid());
     }
@@ -260,6 +267,127 @@ final class TokenServiceTest extends TestCase
         $cache = $this->createMock(CacheInterface::class);
         $cache->method('get')->willReturn($token);
         $cache->expects($this->never())->method('delete');
+
+        self::assertSame($token, (new TokenService($cache))->consumeToken($token->getUid(), true));
+    }
+
+    public function testItTakesAtomicallyWhenTheCacheCan(): void
+    {
+        $token = new Token('testtype');
+        $cache = $this->createMock(AtomicCacheInterface::class);
+        $cache->expects($this->once())
+            ->method('take')
+            ->with('TKN_'.$token->getUid())
+            ->willReturn($token);
+        $cache->expects($this->never())->method('get');
+        $cache->expects($this->never())->method('delete');
+
+        self::assertSame($token, (new TokenService($cache))->consumeToken($token->getUid()));
+    }
+
+    public function testItReturnsNullWhenTheAtomicTakeFindsNothing(): void
+    {
+        $cache = $this->createMock(AtomicCacheInterface::class);
+        $cache->method('take')->willReturn(null);
+
+        self::assertNull((new TokenService($cache))->consumeToken('no-such-uid'));
+    }
+
+    /**
+     * The atomic path needs the same guard as the plain one: a shared pool can
+     * hand back whatever somebody else stored under a colliding key.
+     */
+    #[DataProvider('nonTokenCacheValueProvider')]
+    public function testItReturnsNullWhenTheAtomicTakeYieldsSomethingElse(mixed $taken): void
+    {
+        $cache = $this->createMock(AtomicCacheInterface::class);
+        $cache->method('take')->willReturn($taken);
+
+        self::assertNull((new TokenService($cache))->consumeToken('some-uid'));
+    }
+
+    /**
+     * Taking would spend the token, which is the opposite of what keepToken
+     * asks for, so that mode has to stay on the read-only path.
+     */
+    public function testItDoesNotTakeWhenKeepingTheToken(): void
+    {
+        $token = new Token('testtype');
+        $cache = $this->createMock(AtomicCacheInterface::class);
+        $cache->expects($this->never())->method('take');
+        $cache->expects($this->once())->method('get')->willReturn($token);
+
+        self::assertSame($token, (new TokenService($cache))->consumeToken($token->getUid(), true));
+    }
+
+    public function testAnAtomicTakeLeavesNothingBehind(): void
+    {
+        $cache = new AtomicInMemoryCache();
+        $service = new TokenService($cache);
+        $token = $service->createToken('testtype');
+
+        self::assertNotNull($service->consumeToken($token->getUid()));
+        self::assertSame(1, $cache->takeCalls());
+        self::assertNull($service->consumeToken($token->getUid()));
+    }
+
+    public function testItUsesTakeOnACacheThatOnlyLooksAtomic(): void
+    {
+        $cache = new DuckTypedAtomicCache();
+        $service = new TokenService($cache);
+        $token = $service->createToken('testtype');
+
+        self::assertNotNull($service->consumeToken($token->getUid()));
+        self::assertSame(1, $cache->takeCalls());
+    }
+
+    /**
+     * @return iterable<string, array{CacheInterface, bool}>
+     */
+    public static function atomicSupportProvider(): iterable
+    {
+        yield 'plain PSR-16 cache' => [new InMemoryCache(), false];
+        yield 'cache implementing the contract' => [new AtomicInMemoryCache(), true];
+        yield 'cache exposing only the method' => [new DuckTypedAtomicCache(), true];
+    }
+
+    #[DataProvider('atomicSupportProvider')]
+    public function testItDetectsAtomicTakeSupport(CacheInterface $cache, bool $expected): void
+    {
+        $service = new TokenService($cache);
+
+        self::assertSame($expected, $this->callProtected($service, 'supportsAtomicTake', $cache));
+    }
+
+    public function testItThrowsWhenTheCacheRefusesToRemoveARedeemedToken(): void
+    {
+        $token = new Token('testtype');
+        $cache = $this->createMock(CacheInterface::class);
+        $cache->method('get')->willReturn($token);
+        $cache->method('delete')->willReturn(false);
+
+        $this->expectException(TokenRemovalException::class);
+        $this->expectExceptionMessageMatches('/^The cache refused to remove the redeemed token stored under key `TKN_/');
+
+        (new TokenService($cache))->consumeToken($token->getUid());
+    }
+
+    public function testTheRemovalFailureNamesTheKeyTheTokenIsStillUnder(): void
+    {
+        $exception = TokenRemovalException::forKey('TKN_abc');
+
+        self::assertSame(sprintf(TokenRemovalException::MESSAGE, 'TKN_abc'), $exception->getMessage());
+    }
+
+    /**
+     * A refused delete only matters when the token was meant to be spent.
+     */
+    public function testItDoesNotThrowOnAFailedDeleteWhenKeepingTheToken(): void
+    {
+        $token = new Token('testtype');
+        $cache = $this->createMock(CacheInterface::class);
+        $cache->method('get')->willReturn($token);
+        $cache->method('delete')->willReturn(false);
 
         self::assertSame($token, (new TokenService($cache))->consumeToken($token->getUid(), true));
     }
@@ -464,6 +592,28 @@ final class TokenServiceTest extends TestCase
         self::assertNotNull($write);
         self::assertNull($write['tag']);
         self::assertSame([], $cache->keysTaggedWith(TokenServiceInterface::CACHE_TAG));
+    }
+
+    public function testASubclassCanTurnAtomicTakeOff(): void
+    {
+        $cache = new AtomicInMemoryCache();
+        $service = new CustomisedTokenService($cache, $cache);
+
+        $token = $service->createToken('testtype');
+        self::assertNotNull($service->consumeToken($token->getUid()));
+
+        self::assertSame(0, $cache->takeCalls());
+    }
+
+    public function testASubclassCanTurnAtomicTakeOn(): void
+    {
+        $cache = new AtomicInMemoryCache();
+        $service = new CustomisedTokenService($cache, $cache, false, true);
+
+        $token = $service->createToken('testtype');
+        self::assertNotNull($service->consumeToken($token->getUid()));
+
+        self::assertSame(1, $cache->takeCalls());
     }
 
     public function testASubclassCanTurnTaggingOn(): void

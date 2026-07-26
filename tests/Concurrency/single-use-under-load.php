@@ -1,0 +1,149 @@
+<?php
+
+declare(strict_types=1);
+
+/**
+ * Proves that a token can be redeemed exactly once when several processes go
+ * for it at the same instant.
+ *
+ * A unit test cannot show this. One PHP process has nothing to race against, so
+ * the gap between reading a token and removing it never opens. This script
+ * forks real processes, lines them up on a shared wall-clock start so they all
+ * arrive together, and counts how many believe they redeemed the token.
+ *
+ * Both cache shapes are exercised on purpose:
+ *
+ *   - A cache with an atomic take must produce exactly one winner. That is the
+ *     regression guard: if the atomic path is ever bypassed, this fails.
+ *   - A plain PSR-16 cache is expected to produce more than one winner, which
+ *     is the limitation the README documents. It is asserted rather than
+ *     assumed, so the documentation cannot quietly drift away from the code.
+ *
+ * Usage:
+ *   php tests/Concurrency/single-use-under-load.php
+ *   php tests/Concurrency/single-use-under-load.php --redeemer <driver> <uid> <startAt>
+ */
+
+require_once __DIR__.'/../../vendor/autoload.php';
+
+use IDCT\SingleUseTokenManager\TokenService;
+use IDCT\Tests\SingleUseTokenManager\Double\RedisGetDelCache;
+use Psr\SimpleCache\CacheInterface;
+use Symfony\Component\Cache\Adapter\RedisAdapter;
+use Symfony\Component\Cache\Psr16Cache;
+
+const REDEEMERS = 8;
+const KEY_PREFIX = 'concurrency_';
+const DRIVER_ATOMIC = 'atomic';
+const DRIVER_PLAIN = 'plain';
+
+/**
+ * Builds the cache the given driver names.
+ */
+function build_cache(string $driver): CacheInterface
+{
+    $configuredHost = getenv('REDIS_HOST');
+    $configuredPort = getenv('REDIS_PORT');
+
+    $host = false === $configuredHost || '' === $configuredHost ? '127.0.0.1' : $configuredHost;
+    $port = false === $configuredPort || '' === $configuredPort ? 6379 : (int) $configuredPort;
+
+    if (DRIVER_ATOMIC === $driver) {
+        return new RedisGetDelCache($host, $port, KEY_PREFIX);
+    }
+
+    $redis = new Redis();
+    $redis->connect($host, $port);
+
+    return new Psr16Cache(new RedisAdapter($redis, KEY_PREFIX));
+}
+
+// Child mode: wait for the agreed instant, then try to redeem exactly once.
+if (($argv[1] ?? '') === '--redeemer') {
+    $service = new TokenService(build_cache($argv[2]));
+    $startAt = (float) $argv[4];
+
+    while (microtime(true) < $startAt) {
+        usleep(200);
+    }
+
+    exit(null !== $service->consumeToken($argv[3]) ? 0 : 1);
+}
+
+/**
+ * Issues one token, sets N processes on it at once, and returns how many won.
+ */
+function count_winners(string $driver): int
+{
+    $cache = build_cache($driver);
+    $cache->clear();
+
+    $uid = (new TokenService($cache))->createToken('reset', ['user_id' => 1])->getUid();
+    $startAt = microtime(true) + 2.0;
+
+    $children = [];
+    $pipes = [];
+    for ($i = 0; $i < REDEEMERS; ++$i) {
+        $command = sprintf(
+            '%s %s --redeemer %s %s %s',
+            escapeshellarg(PHP_BINARY),
+            escapeshellarg(__FILE__),
+            escapeshellarg($driver),
+            escapeshellarg($uid),
+            escapeshellarg((string) $startAt),
+        );
+
+        $child = proc_open($command, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $childPipes);
+        if (false === $child) {
+            throw new RuntimeException('Could not start a redeemer process.');
+        }
+
+        $children[] = $child;
+        $pipes[] = $childPipes;
+    }
+
+    $winners = 0;
+    foreach ($children as $index => $child) {
+        fclose($pipes[$index][1]);
+        fclose($pipes[$index][2]);
+
+        if (0 === proc_close($child)) {
+            ++$winners;
+        }
+    }
+
+    $cache->clear();
+
+    return $winners;
+}
+
+$failures = 0;
+
+$atomicWinners = count_winners(DRIVER_ATOMIC);
+printf('atomic cache:     %d of %d redeemers won%s', $atomicWinners, REDEEMERS, PHP_EOL);
+if (1 !== $atomicWinners) {
+    fwrite(STDERR, sprintf(
+        'FAILED: an atomic cache must yield exactly one winner, got %d.%s',
+        $atomicWinners,
+        PHP_EOL,
+    ));
+    ++$failures;
+}
+
+$plainWinners = count_winners(DRIVER_PLAIN);
+printf('plain PSR-16:     %d of %d redeemers won%s', $plainWinners, REDEEMERS, PHP_EOL);
+if ($plainWinners <= 1) {
+    fwrite(STDERR, sprintf(
+        'FAILED: a plain cache was expected to let more than one redeemer through, got %d. '
+        .'If PSR-16 has gained an atomic take, update the README, which documents this limitation.%s',
+        $plainWinners,
+        PHP_EOL,
+    ));
+    ++$failures;
+}
+
+if (0 === $failures) {
+    echo PHP_EOL, 'Single use holds under concurrency on a cache that can take atomically.', PHP_EOL;
+}
+
+exit($failures > 0 ? 1 : 0);

@@ -13,6 +13,7 @@ use IDCT\Cache\RapidCacheClient;
 use IDCT\Cache\RedisConnectionConfig;
 use IDCT\SingleUseTokenManager\Contract\TokenInterface;
 use IDCT\SingleUseTokenManager\TokenService;
+use IDCT\Tests\SingleUseTokenManager\Double\RedisGetDelCache;
 use PHPUnit\Framework\Assert;
 use Psr\SimpleCache\CacheInterface;
 use Redis;
@@ -38,6 +39,9 @@ final class TokenServiceContext implements Context
 
     /** @var string Rapid cache client, PSR-16 with tagging */
     public const DRIVER_RAPID_CACHE = 'rapid_cache';
+
+    /** @var string Redis behind a GETDEL backed cache, PSR-16 with atomic take */
+    public const DRIVER_REDIS_ATOMIC = 'redis_atomic';
 
     /** @var string Key prefix keeping the suites from treading on each other */
     private const KEY_PREFIX = 'sutm_behat_';
@@ -310,6 +314,7 @@ final class TokenServiceContext implements Context
         return match ($this->driver) {
             self::DRIVER_ARRAY => new Psr16Cache(new ArrayAdapter()),
             self::DRIVER_REDIS => new Psr16Cache(new RedisAdapter($this->connectRedis(), self::KEY_PREFIX)),
+            self::DRIVER_REDIS_ATOMIC => new RedisGetDelCache($this->host, $this->port, self::KEY_PREFIX),
             self::DRIVER_RAPID_CACHE => new RapidCacheClient(new RedisConnectionConfig(
                 host: $this->host,
                 port: $this->port,

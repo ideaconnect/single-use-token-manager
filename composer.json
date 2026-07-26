@@ -72,12 +72,17 @@
             "@cache:start",
             "./vendor/bin/behat --strict --no-interaction"
         ],
+        "test:concurrency": [
+            "@cache:start",
+            "php tests/Concurrency/single-use-under-load.php"
+        ],
         "test:mutation": "XDEBUG_MODE=coverage ./vendor/bin/infection --threads=max --no-progress --no-interaction",
         "analyse": "./vendor/bin/phpstan analyse --memory-limit=512M",
         "test": [
             "@analyse",
             "@test:unit",
             "@test:bdd",
+            "@test:concurrency",
             "@test:mutation"
         ],
         "fix": "./vendor/bin/php-cs-fixer fix --allow-risky=yes",
@@ -92,6 +97,7 @@
         "test:bdd:memory": "Run the Behat suite that needs no container",
         "test:bdd:redis": "Run the Behat suites that need Redis and Valkey",
         "test:bdd": "Run every Behat suite",
+        "test:concurrency": "Prove a token survives being redeemed by many processes at once",
         "test:mutation": "Run Infection mutation testing",
         "analyse": "Run PHPStan at the maximum level",
         "test": "Run static analysis, then unit, functional and mutation tests",

@@ -33,6 +33,20 @@ default:
       filters:
         tags: '~@tagging'
 
+    # Redis behind a GETDEL backed cache. Persistent storage where reading and
+    # removing are one operation, so a token really can only be spent once even
+    # when several callers arrive together.
+    redis_atomic:
+      paths:
+        - '%paths.base%/features/service'
+      contexts:
+        - IDCT\Tests\SingleUseTokenManager\Behat\TokenServiceContext:
+            driver: redis_atomic
+            host: '127.0.0.1'
+            port: 6379
+      filters:
+        tags: '~@tagging'
+
     # idct/php-rapid-cache-client against Valkey. Persistent storage with
     # tagging, so clearing reaches the tokens and nothing else.
     rapid_cache_tags:

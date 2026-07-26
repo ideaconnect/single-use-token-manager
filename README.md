@@ -75,10 +75,11 @@ together sit close together in the cache index. Expiry is the cache's job: a
 lifetime handed to `createToken()` goes straight through to the PSR-16 write, so
 an expired token simply is not there any more.
 
-`consumeToken()` reads the entry and deletes it in the same call. It returns
+`consumeToken()` reads the entry and removes it in the same call. It returns
 null for a token that was never issued, one that has expired, one already
 redeemed, and one whose cache entry turned out to hold something else, so
-calling code only needs the single null check.
+calling code only needs the single null check. How that behaves when several
+callers arrive together is covered in [Concurrency](#concurrency).
 
 ## The API
 
@@ -105,16 +106,37 @@ plain objects are safe; open resources and closures are not.
 
 ### Checking a token without spending it
 
-Pass `keepToken: true` to look a token up without redeeming it. Useful for
-rejecting a bad request before committing to the work behind it:
+Pass `keepToken: true` to look a token up without redeeming it. This is for
+read-only checks, such as rendering a page that says the link is still valid:
 
 ```php
+// Rendering a "your reset link is valid" page. Nothing is spent.
+$token = $service->consumeToken($uid, keepToken: true);
+```
+
+Do not use it as a gate in front of a second, redeeming call:
+
+```php
+// Wrong. Two requests can both pass the check and both do the work.
 if (null === $service->consumeToken($uid, keepToken: true)) {
     throw new NotFoundHttpException();
 }
+doTheExpensiveThing();
+$service->consumeToken($uid);
+```
 
-// ... do the expensive part, then spend the token for real
+The gap between the check and the spend is exactly where a second request gets
+in, and the work in the middle widens it. Spend the token first, then do the
+work:
+
+```php
 $token = $service->consumeToken($uid);
+if (null === $token) {
+    throw new NotFoundHttpException();
+}
+
+// The token is spent. Nobody else can redeem it.
+doTheExpensiveThing($token->getPayload());
 ```
 
 ### Reporting a refused write
@@ -123,6 +145,47 @@ PSR-16 write methods report failure by returning false rather than by throwing.
 A service that ignored that would hand back a token the cache never stored, and
 the user would be sent something they could never redeem. `createToken()` turns
 the false into a `TokenStorageException` instead.
+
+`consumeToken()` treats a refused delete the same way, raising a
+`TokenRemovalException`. A token the cache would not remove is still redeemable,
+so reporting the failure is better than telling the caller it was spent. The
+redeemed token is not returned in that case: losing one legitimate redemption
+beats leaving a token open to replay.
+
+## Concurrency
+
+Whether a token really is single use depends on what the cache can do.
+
+PSR-16 has no way to take a value. Reading is `get()` and removing is
+`delete()`, two calls with a gap between them, and every caller that arrives
+inside that gap reads a token that is still there. Eight processes redeeming one
+token simultaneously against a plain PSR-16 cache all succeed.
+
+When the cache can read and remove in one operation, `consumeToken()` uses that
+instead and exactly one caller wins. Declare the capability by implementing
+`IDCT\SingleUseTokenManager\Contract\AtomicCacheInterface`:
+
+```php
+public function take(string $key): mixed;   // return the value and remove it, atomically
+```
+
+The service detects the method rather than the interface, so any cache carrying
+a compatible `take()` is used as-is. Backing it is usually one command: Redis
+and Valkey have had `GETDEL` since 6.2, which phpredis exposes as `getDel()`.
+
+`tests/Concurrency/single-use-under-load.php` demonstrates both halves. It lines
+eight processes up on one token and asserts that an atomic cache yields exactly
+one winner while a plain one does not, so neither this section nor the guarantee
+can drift without the build noticing:
+
+```
+$ composer test:concurrency
+atomic cache:     1 of 8 redeemers won
+plain PSR-16:     8 of 8 redeemers won
+```
+
+If more than one request can present the same token at once, and both succeeding
+would matter, use a cache that can take atomically.
 
 ## Clearing tokens
 

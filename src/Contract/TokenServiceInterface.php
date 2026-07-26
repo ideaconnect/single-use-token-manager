@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace IDCT\SingleUseTokenManager\Contract;
 
+use IDCT\SingleUseTokenManager\Exception\TokenRemovalException;
 use IDCT\SingleUseTokenManager\Exception\TokenStorageException;
 
 /**
@@ -64,8 +65,12 @@ interface TokenServiceInterface
      *
      * The token is removed from the cache as it is returned, so a second call
      * with the same identifier yields null. Pass `$keepToken` to look a token
-     * up without spending it, which is useful for validating a request before
-     * committing to the work behind it.
+     * up without spending it. That mode is for read-only checks only: it must
+     * not be used to gate a later redeeming call, because the gap between the
+     * two is exactly where a second request gets in.
+     *
+     * Whether simultaneous callers can both redeem depends on the cache. See
+     * {@see AtomicCacheInterface} for what closes that window.
      *
      * @param string $uid       unique identifier of the token to redeem
      * @param bool   $keepToken true to leave the token in the cache
@@ -73,6 +78,7 @@ interface TokenServiceInterface
      * @return TokenInterface|null the redeemed token, or null when no live
      *                             token is stored under that identifier
      *
+     * @throws TokenRemovalException                     if the cache refused to remove a redeemed token
      * @throws \Psr\SimpleCache\InvalidArgumentException if the cache key is not a legal value
      */
     public function consumeToken(string $uid, bool $keepToken = false): ?TokenInterface;
