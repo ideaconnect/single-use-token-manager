@@ -385,6 +385,12 @@ composer cache:stop    # stop them
 composer cache:clean   # stop them and drop the volumes
 ```
 
+## Changelog
+
+[CHANGELOG.md](CHANGELOG.md) records what changed in each release. If you are
+coming from 1.x under the old `GryfOSS` namespace, it also carries the upgrade
+steps.
+
 ## Licence
 
 BSD 3-Clause. See [LICENSE](LICENSE).
