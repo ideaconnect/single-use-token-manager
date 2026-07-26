@@ -356,6 +356,8 @@ src/
 ## Requirements
 
 - PHP 8.2 or newer, tested on 8.2, 8.3, 8.4 and 8.5
+- Symfony Serializer, Uid and Validator, 7.4 or newer, or 8.0 or newer. Symfony
+  8 itself needs PHP 8.4, so PHP 8.2 and 8.3 resolve to the 7.4 line
 - A PSR-16 cache
 - Docker and Docker Compose, for the functional tests that need a server
 

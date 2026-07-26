@@ -6,6 +6,44 @@ All notable changes to this project are recorded here. The format follows
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-07-26
+
+A dependency release. No class, method or behaviour changed, so the only reason
+this is a major is that the accepted Symfony range no longer includes 6.4. If
+you are on Symfony 7.4 or newer the upgrade is a `composer update`.
+
+### Removed
+
+- **Support for Symfony 6.4.** `symfony/serializer`, `symfony/uid` and
+  `symfony/validator` now require `^7.4 || ^8.0`. Supporting three majors at
+  once pinned the floor to the oldest maintained branch for no gain here, since
+  none of the three components are used in a way that needs it. Projects still
+  on Symfony 6 should stay on 2.0.0 until they can move.
+
+### Added
+
+- **Symfony 8 is supported.** It requires PHP 8.4, so PHP 8.2 and 8.3 resolve to
+  the 7.4 line instead. The package floor stays at PHP 8.2.
+
+### Changed
+
+- Development dependencies now allow their current releases: PHPUnit
+  `^11.5 || ^12.0 || ^13.0`, Infection `^0.32 || ^0.33 || ^0.34` and Behat
+  `^3.32`. The union ranges are what keeps the PHP 8.2 job working, since
+  PHPUnit 13 needs PHP 8.4 and Infection 0.34 needs PHP 8.3.
+- The `zircote/swagger-php` development dependency is now `^6.0`. The old `^4.1`
+  floor pulled a release that triggers dynamic property deprecations on PHP 8.2
+  and newer, and a `^5.0` floor is worse still: 5.0.0 cannot instantiate the
+  OpenAPI attribute at all outside the generator.
+- Unit tests that configure return values without asserting on calls now use
+  `createStub()` rather than `createMock()`, which PHPUnit 13 reports on.
+
+## Upgrading from 2.x
+
+Nothing in the library changed. Move to Symfony 7.4 or newer, or to Symfony 8 if
+you are on PHP 8.4, and `composer update`. If Composer refuses to resolve, it is
+because something else in the project still holds Symfony to 6.4.
+
 ## [2.0.0] - 2026-07-26
 
 A security release as much as a rename. Two of the changes below fix cases where
@@ -143,5 +181,6 @@ README's Concurrency section.
 whitespace is rejected where it previously passed. That was always a certain
 cache miss, but code relying on the old behaviour will see a new violation.
 
-[Unreleased]: https://github.com/ideaconnect/single-use-token-manager/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/ideaconnect/single-use-token-manager/compare/v3.0.0...HEAD
+[3.0.0]: https://github.com/ideaconnect/single-use-token-manager/compare/v2.0.0...v3.0.0
 [2.0.0]: https://github.com/ideaconnect/single-use-token-manager/releases/tag/v2.0.0

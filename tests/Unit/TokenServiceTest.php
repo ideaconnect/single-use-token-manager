@@ -290,7 +290,7 @@ final class TokenServiceTest extends TestCase
 
     public function testItReturnsTheTokenWhenTheCacheAcceptsTheWrite(): void
     {
-        $cache = $this->createMock(CacheInterface::class);
+        $cache = self::createStub(CacheInterface::class);
         $cache->method('set')->willReturn(true);
 
         $token = (new TokenService($cache))->createToken('testtype');
@@ -371,7 +371,7 @@ final class TokenServiceTest extends TestCase
 
     public function testItReturnsNullWhenTheAtomicTakeFindsNothing(): void
     {
-        $cache = $this->createMock(AtomicCacheInterface::class);
+        $cache = self::createStub(AtomicCacheInterface::class);
         $cache->method('take')->willReturn(null);
 
         self::assertNull((new TokenService($cache))->consumeToken('no-such-uid'));
@@ -384,7 +384,7 @@ final class TokenServiceTest extends TestCase
     #[DataProvider('nonTokenCacheValueProvider')]
     public function testItReturnsNullWhenTheAtomicTakeYieldsSomethingElse(mixed $taken): void
     {
-        $cache = $this->createMock(AtomicCacheInterface::class);
+        $cache = self::createStub(AtomicCacheInterface::class);
         $cache->method('take')->willReturn($taken);
 
         self::assertNull((new TokenService($cache))->consumeToken('some-uid'));
@@ -446,7 +446,7 @@ final class TokenServiceTest extends TestCase
     public function testItThrowsWhenTheCacheRefusesToRemoveARedeemedToken(): void
     {
         $token = new Token('testtype');
-        $cache = $this->createMock(CacheInterface::class);
+        $cache = self::createStub(CacheInterface::class);
         $cache->method('get')->willReturn($token);
         $cache->method('delete')->willReturn(false);
 
@@ -469,7 +469,7 @@ final class TokenServiceTest extends TestCase
     public function testItDoesNotThrowOnAFailedDeleteWhenKeepingTheToken(): void
     {
         $token = new Token('testtype');
-        $cache = $this->createMock(CacheInterface::class);
+        $cache = self::createStub(CacheInterface::class);
         $cache->method('get')->willReturn($token);
         $cache->method('delete')->willReturn(false);
 

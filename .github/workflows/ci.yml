@@ -17,8 +17,9 @@ jobs:
         include:
           # The floor of every declared version range, so a constraint that
           # claims support it does not have fails the build. Pinned to the
-          # lowest supported PHP: Symfony 6.4 on PHP 8.5 emits a wall of
-          # deprecations from inside Symfony itself, which is not ours to fix.
+          # lowest supported PHP: Symfony 7.4 on PHP 8.5 emits implicitly
+          # nullable parameter deprecations from inside Symfony itself, which
+          # is not ours to fix.
           - php-version: '8.2'
             dependencies: lowest
           - php-version: '8.2'

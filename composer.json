@@ -24,22 +24,22 @@
     "require": {
         "php": "^8.2",
         "psr/simple-cache": "^3.0",
-        "symfony/serializer": "^6.4 || ^7.0",
-        "symfony/uid": "^6.4 || ^7.0",
-        "symfony/validator": "^6.4 || ^7.0"
+        "symfony/serializer": "^7.4 || ^8.0",
+        "symfony/uid": "^7.4 || ^8.0",
+        "symfony/validator": "^7.4 || ^8.0"
     },
     "require-dev": {
-        "behat/behat": "^3.31",
+        "behat/behat": "^3.32",
         "friendsofphp/php-cs-fixer": "^3.95",
         "idct/php-rapid-cache-client": "^1.1.1",
-        "infection/infection": "^0.32",
+        "infection/infection": "^0.32 || ^0.33 || ^0.34",
         "phpstan/phpstan": "^2.2",
         "phpstan/phpstan-phpunit": "^2.0",
         "phpstan/phpstan-strict-rules": "^2.0",
-        "phpunit/phpunit": "^11.5",
-        "symfony/cache": "^6.4 || ^7.0",
-        "symfony/property-access": "^6.4 || ^7.0",
-        "zircote/swagger-php": "^4.1 || ^5.0 || ^6.0"
+        "phpunit/phpunit": "^11.5 || ^12.0 || ^13.0",
+        "symfony/cache": "^7.4 || ^8.0",
+        "symfony/property-access": "^7.4 || ^8.0",
+        "zircote/swagger-php": "^6.0"
     },
     "suggest": {
         "idct/php-rapid-cache-client": "PSR-16 Redis/Valkey cache with tag support and an atomic take(), so clearAllTokens() drops only tokens and a token cannot be redeemed twice by simultaneous callers",
