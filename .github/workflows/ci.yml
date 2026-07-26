@@ -156,17 +156,29 @@ jobs:
       - name: Prove single use holds under concurrency
         run: php tests/Concurrency/single-use-under-load.php
 
-      # Mutation testing is slow and its result does not vary with the PHP
-      # version, so it runs once on the lowest supported one. Infection fails
-      # the build when the MSI drops below the thresholds in infection.json.
-      # Gated on the dependency mode too, otherwise both 8.2 jobs would run it.
+      # Runs on every job rather than one. src is small enough that Infection
+      # takes seconds, so gating it bought nothing and left four of the five
+      # jobs unable to catch a mutant that only survives on one PHP version.
+      # It fails the build below the thresholds in infection.json, both 100%.
       - name: Run mutation testing
-        if: matrix.php-version == '8.2' && matrix.dependencies == 'highest'
         env:
           XDEBUG_MODE: coverage
         run: ./vendor/bin/infection --threads=max --no-progress --no-interaction
 
-      - name: Upload the coverage report
+      # Every job uploads, flagged by PHP version and dependency mode, so
+      # Codecov merges them and a line missed only under one resolution is
+      # still visible. fail_ci_if_error stays false: a Codecov outage should
+      # not turn a green build red, and the 100% gate above is the real
+      # enforcement.
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v7
+        with:
+          files: ./coverage.xml
+          flags: php-${{ matrix.php-version }}-${{ matrix.dependencies }}
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+
+      - name: Upload the coverage report as an artifact
         if: matrix.php-version == '8.3' && matrix.dependencies == 'highest'
         uses: actions/upload-artifact@v7
         with:
