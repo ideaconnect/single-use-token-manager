@@ -26,8 +26,16 @@ use Symfony\Component\Uid\UuidV6;
  */
 final class Token implements TokenInterface
 {
-    /** @var string Message template used when the given type is rejected */
-    public const TYPE_ERROR = 'Type must be a not empty, only alphanumeric string not longer than 16 symbols. Used `%s`.';
+    /**
+     * Message template used when the given type is rejected.
+     *
+     * It names the real rule rather than saying "alphanumeric", which would
+     * suggest uppercase is allowed and leave the caller guessing why `Reset`
+     * was refused.
+     *
+     * @var string
+     */
+    public const TYPE_ERROR = 'Type must be 1 to 16 characters, using only lowercase letters and digits. Used `%s`.';
 
     /**
      * Pattern every accepted token type has to match in full.
