@@ -8,13 +8,27 @@ on:
 
 jobs:
   tests:
-    name: PHP ${{ matrix.php-version }}
+    name: PHP ${{ matrix.php-version }} (${{ matrix.dependencies }} deps)
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
-        php-version: ['8.2', '8.3', '8.4', '8.5']
+        include:
+          # The floor of every declared version range, so a constraint that
+          # claims support it does not have fails the build. Pinned to the
+          # lowest supported PHP: Symfony 6.4 on PHP 8.5 emits a wall of
+          # deprecations from inside Symfony itself, which is not ours to fix.
+          - php-version: '8.2'
+            dependencies: lowest
+          - php-version: '8.2'
+            dependencies: highest
+          - php-version: '8.3'
+            dependencies: highest
+          - php-version: '8.4'
+            dependencies: highest
+          - php-version: '8.5'
+            dependencies: highest
 
     services:
       # Backs the redis_no_tags Behat suite through the Symfony PSR-16 wrapper.
@@ -69,11 +83,19 @@ jobs:
         uses: actions/cache@v5
         with:
           path: vendor
-          key: ${{ runner.os }}-php-${{ matrix.php-version }}-${{ hashFiles('composer.json') }}
-          restore-keys: ${{ runner.os }}-php-${{ matrix.php-version }}-
+          key: ${{ runner.os }}-php-${{ matrix.php-version }}-${{ matrix.dependencies }}-${{ hashFiles('composer.json') }}
+          restore-keys: ${{ runner.os }}-php-${{ matrix.php-version }}-${{ matrix.dependencies }}-
 
       - name: Install dependencies
-        run: composer install --prefer-dist --no-progress
+        run: |
+          if [ "${{ matrix.dependencies }}" = "lowest" ]; then
+            composer update --prefer-lowest --prefer-stable --prefer-dist --no-progress
+          else
+            composer install --prefer-dist --no-progress
+          fi
+
+      - name: Report the resolved dependency versions
+        run: composer show --direct
 
       - name: Check the coding standard
         run: composer lint
@@ -128,14 +150,15 @@ jobs:
       # Mutation testing is slow and its result does not vary with the PHP
       # version, so it runs once on the lowest supported one. Infection fails
       # the build when the MSI drops below the thresholds in infection.json.
+      # Gated on the dependency mode too, otherwise both 8.2 jobs would run it.
       - name: Run mutation testing
-        if: matrix.php-version == '8.2'
+        if: matrix.php-version == '8.2' && matrix.dependencies == 'highest'
         env:
           XDEBUG_MODE: coverage
         run: ./vendor/bin/infection --threads=max --no-progress --no-interaction
 
       - name: Upload the coverage report
-        if: matrix.php-version == '8.3'
+        if: matrix.php-version == '8.3' && matrix.dependencies == 'highest'
         uses: actions/upload-artifact@v7
         with:
           name: coverage-report
