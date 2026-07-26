@@ -30,6 +30,38 @@ Feature: Token
     And I construct a second token of the same type
     Then the two tokens should have different identifiers
 
+  Scenario: A caller may name the identifier instead
+    Given a token type of "reset"
+    And an identifier of "reset.42"
+    When I construct the token
+    Then I should get a token
+    And the token identifier should be "reset.42"
+
+  Scenario: A named identifier is used instead of a generated one
+    Given a token type of "reset"
+    And an identifier of "reset.42"
+    When I construct the token
+    And I construct a second token of the same type
+    Then the two tokens should have the same identifier
+
+  Scenario Outline: An identifier a cache could not hold stops the token from existing
+    Given a token type of "reset"
+    And an identifier of "<uid>"
+    When I construct the token
+    Then I should not get a token
+    And the construction should be refused
+    And the refusal should name the rejected identifier
+
+    Examples:
+      | uid      | why                       |
+      |          | empty                     |
+      | reset:42 | colon is reserved         |
+      | reset/42 | forward slash is reserved |
+      | reset\42 | backslash is reserved     |
+      | reset@42 | at sign is reserved       |
+      | reset(42 | parenthesis is reserved   |
+      | reset{42 | brace is reserved         |
+
   Scenario Outline: A usable type is accepted
     Given a token type of "<type>"
     When I construct the token

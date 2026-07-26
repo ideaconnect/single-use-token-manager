@@ -13,6 +13,56 @@ Feature: Token service
     Then I should get a token
     And the token identifier should be a version 4 uuid
 
+  Scenario: A token can be issued under an identifier the caller chose
+    When I create a token of type "reset" identified by "reset.42"
+    Then I should get a token
+    And the token identifier should be "reset.42"
+
+  Scenario: A token issued under a chosen identifier is redeemed by it
+    Given I have created a token of type "reset" identified by "reset.42" with payload "user-7"
+    When I redeem the identifier "reset.42"
+    Then I should get the token back
+    And the redeemed token should carry the payload "user-7"
+    And the redeemed token identifier should be "reset.42"
+
+  Scenario: A chosen identifier is still spent exactly once
+    Given I have created a token of type "reset" identified by "reset.42" with payload "user-7"
+    When I redeem the identifier "reset.42"
+    Then I should get the token back
+    When I redeem the identifier "reset.42"
+    Then I should get nothing back
+
+  Scenario: Re-issuing under the same identifier replaces what was there
+    Given I have created a token of type "reset" identified by "reset.42" with payload "first"
+    And I have created a token of type "reset" identified by "reset.42" with payload "second"
+    When I redeem the identifier "reset.42"
+    Then I should get the token back
+    And the redeemed token should carry the payload "second"
+    When I redeem the identifier "reset.42"
+    Then I should get nothing back
+
+  Scenario: Two callers choosing different identifiers do not collide
+    Given I have created a token of type "reset" identified by "reset.42" with payload "user-42"
+    And I have created a token of type "reset" identified by "reset.43" with payload "user-43"
+    When I redeem the identifier "reset.42"
+    Then the redeemed token identifier should be "reset.42"
+    And the redeemed token should carry the payload "user-42"
+    When I redeem the identifier "reset.43"
+    Then the redeemed token identifier should be "reset.43"
+    And the redeemed token should carry the payload "user-43"
+
+  Scenario Outline: An identifier the cache could not store is refused up front
+    When I create a token of type "reset" identified by the invalid identifier "<uid>"
+    Then the creation should be refused
+
+    Examples:
+      | uid       | why                        |
+      |           | empty                      |
+      | reset:42  | colon is reserved          |
+      | reset/42  | forward slash is reserved  |
+      | reset@42  | at sign is reserved        |
+      | reset{42  | brace is reserved          |
+
   Scenario: A token comes back with the type and payload it was issued with
     Given I have created a token of type "reset" with payload "user-7"
     When I redeem the token

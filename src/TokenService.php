@@ -102,22 +102,32 @@ class TokenService implements TokenServiceInterface
      * {@see clearAllTokens()} can later drop tokens without touching anything
      * else in the pool.
      *
-     * @param string   $type    token type: lowercase letters and digits, at
-     *                          most 16 characters
-     * @param mixed    $payload optional data to carry with the token; it must
-     *                          survive the cache's serialisation
-     * @param int|null $ttl     lifetime in seconds, or null to let the cache
-     *                          decide how long to keep the entry
+     * An identifier may be supplied when the token has to be reachable from
+     * data the redeeming request already carries rather than from a random
+     * value it has nowhere to put. Writing an identifier that already holds a
+     * token replaces it, which is what lets a flow re-issue into the same slot;
+     * it also means the identifier is no longer a secret, so the caller must
+     * check something in the payload before acting. {@see Token} sets out both
+     * duties in full.
+     *
+     * @param string      $type    token type: lowercase letters and digits, at
+     *                             most 16 characters
+     * @param mixed       $payload optional data to carry with the token; it must
+     *                             survive the cache's serialisation
+     * @param int|null    $ttl     lifetime in seconds, or null to let the cache
+     *                             decide how long to keep the entry
+     * @param string|null $uid     identifier to store the token under, or null to
+     *                             receive an unguessable UUID v4
      *
      * @return TokenInterface the created token, carrying its unique identifier
      *
-     * @throws \InvalidArgumentException                 if the token type is not acceptable
+     * @throws \InvalidArgumentException                 if the token type or the supplied identifier is not acceptable
      * @throws TokenStorageException                     if the cache refused to store the token
      * @throws \Psr\SimpleCache\InvalidArgumentException if the cache key is not a legal value
      */
-    public function createToken(string $type, mixed $payload = null, ?int $ttl = null): TokenInterface
+    public function createToken(string $type, mixed $payload = null, ?int $ttl = null, ?string $uid = null): TokenInterface
     {
-        $token = new Token($type, $payload);
+        $token = new Token($type, $payload, $uid);
         $cache = $this->getCache();
         $key = $this->buildKey($token->getUid());
 

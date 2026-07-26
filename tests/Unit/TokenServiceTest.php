@@ -192,6 +192,102 @@ final class TokenServiceTest extends TestCase
         self::assertSame($token, $write['value']);
     }
 
+    public function testItStoresTheTokenUnderTheSuppliedIdentifier(): void
+    {
+        $cache = new InMemoryCache();
+        $service = new TokenService($cache);
+
+        $token = $service->createToken('testtype', null, null, 'reset.42');
+
+        self::assertSame('reset.42', $token->getUid());
+        $write = $cache->lastWrite();
+        self::assertNotNull($write);
+        self::assertSame('TKN_reset.42', $write['key']);
+    }
+
+    /**
+     * The namespace still applies to a supplied identifier, so two services
+     * sharing a pool cannot reach each other's tokens just because the caller
+     * chose the same identifier in both.
+     */
+    public function testItNamespacesASuppliedIdentifierToo(): void
+    {
+        $cache = new InMemoryCache();
+
+        (new TokenService($cache, 'tenant_'))->createToken('testtype', null, null, 'reset.42');
+
+        $write = $cache->lastWrite();
+        self::assertNotNull($write);
+        self::assertSame('tenant_TKN_reset.42', $write['key']);
+    }
+
+    /**
+     * A supplied identifier is a slot, not a fresh entry: re-issuing into it is
+     * how a flow replaces the token it had in flight.
+     */
+    public function testReusingASuppliedIdentifierReplacesTheStoredToken(): void
+    {
+        $cache = new InMemoryCache();
+        $service = new TokenService($cache);
+
+        $service->createToken('testtype', 'first', null, 'reset.42');
+        $service->createToken('testtype', 'second', null, 'reset.42');
+
+        $redeemed = $service->consumeToken('reset.42');
+        self::assertNotNull($redeemed);
+        self::assertSame('second', $redeemed->getPayload());
+        self::assertNull($service->consumeToken('reset.42'));
+    }
+
+    public function testATokenStoredUnderASuppliedIdentifierIsRedeemedByIt(): void
+    {
+        $service = new TokenService(new InMemoryCache());
+        $service->createToken('testtype', 'user-7', null, 'reset.42');
+
+        $redeemed = $service->consumeToken('reset.42');
+
+        self::assertNotNull($redeemed);
+        self::assertSame('user-7', $redeemed->getPayload());
+        self::assertSame('reset.42', $redeemed->getUid());
+    }
+
+    public function testItRejectsAnUnusableIdentifierBeforeTouchingTheCache(): void
+    {
+        $cache = new InMemoryCache();
+
+        try {
+            (new TokenService($cache))->createToken('testtype', null, null, 'reset:42');
+            self::fail('An identifier carrying a reserved character should be refused.');
+        } catch (\InvalidArgumentException) {
+            self::assertNull($cache->lastWrite());
+        }
+    }
+
+    public function testItPassesTheTtlThroughAlongsideASuppliedIdentifier(): void
+    {
+        $cache = new InMemoryCache();
+
+        (new TokenService($cache))->createToken('testtype', 'payload', 150, 'reset.42');
+
+        $write = $cache->lastWrite();
+        self::assertNotNull($write);
+        self::assertSame(150, $write['ttl']);
+        self::assertSame('TKN_reset.42', $write['key']);
+    }
+
+    public function testItTagsATokenStoredUnderASuppliedIdentifier(): void
+    {
+        $cache = new TaggedInMemoryCache();
+
+        (new TokenService($cache))->createToken('testtype', null, null, 'reset.42');
+
+        $write = $cache->lastWrite();
+        self::assertNotNull($write);
+        self::assertSame('TKN_reset.42', $write['key']);
+        self::assertSame(TokenServiceInterface::CACHE_TAG, $write['tag']);
+        self::assertSame(['TKN_reset.42'], $cache->keysTaggedWith(TokenServiceInterface::CACHE_TAG));
+    }
+
     public function testItStoresTheTokenWithoutATtlByDefault(): void
     {
         $cache = new InMemoryCache();
