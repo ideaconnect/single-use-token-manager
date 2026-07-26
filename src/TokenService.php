@@ -45,6 +45,12 @@ class TokenService implements TokenServiceInterface
     /** @var string Message template used when a namespace is rejected */
     public const NAMESPACE_ERROR = 'Namespace must not contain any of the PSR-16 reserved characters `%s`. Used `%s`.';
 
+    /** @var bool Whether the injected cache can group and clear entries by tag */
+    private readonly bool $cacheSupportsTagging;
+
+    /** @var bool Whether the injected cache can read and remove an entry in one step */
+    private readonly bool $cacheSupportsAtomicTake;
+
     /**
      * Initialises the service with the cache that will hold the tokens.
      *
@@ -71,6 +77,21 @@ class TokenService implements TokenServiceInterface
         if ('' !== $namespace && false !== strpbrk($namespace, self::RESERVED_NAMESPACE_CHARS)) {
             throw new \InvalidArgumentException(sprintf(self::NAMESPACE_ERROR, self::RESERVED_NAMESPACE_CHARS, $namespace));
         }
+
+        // Settled once, here, rather than on every operation. A cache object
+        // cannot gain or lose methods during its lifetime, so asking again on
+        // each createToken() or consumeToken() would burn reflection on the hot
+        // path to reach a conclusion that cannot have changed.
+        //
+        // A cache declaring the contract is taken at its word. Everything else
+        // is judged on the methods it carries, which is what lets a cache that
+        // has never heard of this package, such as `IDCT\Cache\RapidCacheClient`,
+        // be used without the contract becoming a required dependency.
+        $this->cacheSupportsTagging = $cache instanceof TaggedCacheInterface
+            || (method_exists($cache, 'setTagged') && method_exists($cache, 'clearByTag'));
+
+        $this->cacheSupportsAtomicTake = $cache instanceof AtomicCacheInterface
+            || method_exists($cache, 'take');
     }
 
     /**
@@ -191,6 +212,12 @@ class TokenService implements TokenServiceInterface
      * Kept protected so a subclass can swap in a different pool, for instance
      * one resolved per tenant, without the rest of the class changing.
      *
+     * A subclass returning a pool of the same kind needs nothing else. One
+     * returning a different implementation must also override
+     * {@see supportsTagging()} and {@see supportsAtomicTake()}, because those
+     * report what the cache given to the constructor could do, which is settled
+     * once and cannot follow a pool that changes per call.
+     *
      * @return CacheInterface the PSR-16 cache holding the tokens
      */
     protected function getCache(): CacheInterface
@@ -199,20 +226,23 @@ class TokenService implements TokenServiceInterface
     }
 
     /**
-     * Reports whether the given cache can store and clear entries by tag.
+     * Reports whether the cache can store and clear entries by tag.
      *
-     * The check is made on the methods rather than on
-     * {@see TaggedCacheInterface}, which covers both shapes at once: a cache
-     * implementing the contract necessarily carries the two methods, and a
-     * cache that merely exposes them is recognised as well. The second case is
-     * what lets `IDCT\Cache\RapidCacheClient` be used without this package
-     * depending on `idct/php-rapid-cache-client`.
+     * Answered from the flag settled in the constructor, so this costs a field
+     * read rather than a fresh round of reflection on every operation.
      *
-     * Both methods are required. Being able to write a tag without being able
-     * to clear by one would leave {@see clearAllTokens()} with no way to reach
-     * the tokens it just tagged, so half an implementation is treated as none.
+     * Both tagging methods are required. Being able to write a tag without
+     * being able to clear by one would leave {@see clearAllTokens()} with no
+     * way to reach the tokens it just tagged, so half an implementation is
+     * treated as none.
      *
-     * @param CacheInterface $cache cache to inspect
+     * The `$cache` argument is deliberately not inspected. It is here so the
+     * assertion below can narrow the caller's variable, which is what lets the
+     * duck-typed `setTagged()` and `clearByTag()` calls satisfy static
+     * analysis. Override this method to force the answer either way.
+     *
+     * @param CacheInterface $cache cache the caller is about to use, narrowed
+     *                              by the assertion rather than examined
      *
      * @return bool true when both tagging methods are available
      *
@@ -220,18 +250,17 @@ class TokenService implements TokenServiceInterface
      */
     protected function supportsTagging(CacheInterface $cache): bool
     {
-        return method_exists($cache, 'setTagged') && method_exists($cache, 'clearByTag');
+        return $this->cacheSupportsTagging;
     }
 
     /**
-     * Reports whether the given cache can read and remove an entry in one go.
+     * Reports whether the cache can read and remove an entry in one go.
      *
-     * Detected on the method rather than on {@see AtomicCacheInterface}, for
-     * the same reason tagging is: a cache implementing the contract carries the
-     * method anyway, and a cache that merely exposes a compatible `take()` is
-     * just as usable without having to know this package exists.
+     * Answered from the flag settled in the constructor, for the same reason
+     * {@see supportsTagging()} is.
      *
-     * @param CacheInterface $cache cache to inspect
+     * @param CacheInterface $cache cache the caller is about to use, narrowed
+     *                              by the assertion rather than examined
      *
      * @return bool true when the cache can take atomically
      *
@@ -239,7 +268,7 @@ class TokenService implements TokenServiceInterface
      */
     protected function supportsAtomicTake(CacheInterface $cache): bool
     {
-        return method_exists($cache, 'take');
+        return $this->cacheSupportsAtomicTake;
     }
 
     /**

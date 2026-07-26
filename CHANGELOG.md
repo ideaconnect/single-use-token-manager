@@ -14,6 +14,16 @@ All notable changes to this project are recorded here. The format follows
   than a test fixture. 1.1.1 fixes a data-loss bug in that `take()`, so the
   floor skips 1.1.0.
 
+### Changed
+
+- Cache capabilities are probed once in the `TokenService` constructor instead
+  of on every operation. A cache cannot gain or lose methods during its
+  lifetime, so the answer was being re-derived to reach a conclusion that could
+  not have changed. `supportsTagging()` and `supportsAtomicTake()` keep their
+  signatures and stay overridable, but now read a flag. A subclass that
+  overrides `getCache()` to return a *different kind* of cache must override
+  them too, which the `getCache()` docblock now says.
+
 ### Fixed
 
 - The concurrency check no longer fails when the redeemer processes happen not
