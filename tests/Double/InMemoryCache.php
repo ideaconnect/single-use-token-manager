@@ -109,13 +109,25 @@ class InMemoryCache implements CacheInterface
     }
 
     /**
-     * @param iterable<string, mixed> $values
+     * The key type stays `mixed` rather than `string` because PSR-16 documents
+     * this parameter as a bare `iterable`, and narrowing a parameter below what
+     * the interface promises would break contravariance.
+     *
+     * @param iterable<mixed, mixed> $values
      */
     public function setMultiple(iterable $values, int|\DateInterval|null $ttl = null): bool
     {
         $result = true;
         foreach ($values as $key => $value) {
-            $result = $this->set($key, $value, $ttl) && $result;
+            // Array keys are always int or string, and PHP turns a numeric
+            // string key into an int on the way in, so the cast puts it back.
+            // A Traversable can yield anything at all, which PSR-16 requires
+            // an implementation to reject.
+            if (!is_string($key) && !is_int($key)) {
+                throw new InvalidCacheKeyException('A cache key must be a string.');
+            }
+
+            $result = $this->set((string) $key, $value, $ttl) && $result;
         }
 
         return $result;

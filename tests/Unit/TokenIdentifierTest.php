@@ -50,15 +50,15 @@ final class TokenIdentifierTest extends TestCase
         $identifier = new TokenIdentifier();
         $identifier->token = 'test-token-123';
 
-        $this->assertSame('test-token-123', $identifier->token);
+        self::assertSame('test-token-123', $identifier->token);
     }
 
     public function testTheIdentifierIsAPublicStringProperty(): void
     {
         $property = new \ReflectionProperty(TokenIdentifier::class, 'token');
 
-        $this->assertTrue($property->isPublic());
-        $this->assertSame('string', (string) $property->getType());
+        self::assertTrue($property->isPublic());
+        self::assertSame('string', (string) $property->getType());
     }
 
     /**
@@ -79,7 +79,7 @@ final class TokenIdentifierTest extends TestCase
         $identifier = new TokenIdentifier();
         $identifier->token = $token;
 
-        $this->assertCount(0, $this->validator->validate($identifier));
+        self::assertCount(0, $this->validator->validate($identifier));
     }
 
     /**
@@ -100,8 +100,8 @@ final class TokenIdentifierTest extends TestCase
 
         $violations = $this->validator->validate($identifier);
 
-        $this->assertGreaterThan(0, $violations->count());
-        $this->assertSame('token', $violations->get(0)->getPropertyPath());
+        self::assertGreaterThan(0, $violations->count());
+        self::assertSame('token', $violations->get(0)->getPropertyPath());
     }
 
     public function testItReportsTheBlankIdentifierWithTheStandardMessage(): void
@@ -114,7 +114,7 @@ final class TokenIdentifierTest extends TestCase
             $messages[] = $violation->getMessage();
         }
 
-        $this->assertContains('This value should not be blank.', $messages);
+        self::assertContains('This value should not be blank.', $messages);
     }
 
     /**
@@ -128,7 +128,7 @@ final class TokenIdentifierTest extends TestCase
 
         $violations = $this->validator->validate($identifier);
 
-        $this->assertGreaterThan(0, $violations->count());
+        self::assertGreaterThan(0, $violations->count());
     }
 
     public function testItSerialisesTheIdentifierAsToken(): void
@@ -136,7 +136,7 @@ final class TokenIdentifierTest extends TestCase
         $identifier = new TokenIdentifier();
         $identifier->token = 'serialisation-test-token';
 
-        $this->assertSame(
+        self::assertSame(
             '{"token":"serialisation-test-token"}',
             $this->serializer->serialize($identifier, 'json'),
         );
@@ -150,8 +150,8 @@ final class TokenIdentifierTest extends TestCase
             'json',
         );
 
-        $this->assertInstanceOf(TokenIdentifier::class, $identifier);
-        $this->assertSame('deserialisation-test-token', $identifier->token);
+        self::assertInstanceOf(TokenIdentifier::class, $identifier);
+        self::assertSame('deserialisation-test-token', $identifier->token);
     }
 
     public function testItSurvivesASerialisationRoundTrip(): void
@@ -165,8 +165,8 @@ final class TokenIdentifierTest extends TestCase
             'json',
         );
 
-        $this->assertInstanceOf(TokenIdentifier::class, $restored);
-        $this->assertSame($identifier->token, $restored->token);
+        self::assertInstanceOf(TokenIdentifier::class, $restored);
+        self::assertSame($identifier->token, $restored->token);
     }
 
     /**
@@ -193,7 +193,7 @@ final class TokenIdentifierTest extends TestCase
             $property->getAttributes(),
         );
 
-        $this->assertContains($attribute, $names);
+        self::assertContains($attribute, $names);
     }
 
     public function testEveryAttributeOnTheIdentifierCanBeInstantiated(): void
@@ -201,7 +201,7 @@ final class TokenIdentifierTest extends TestCase
         $property = new \ReflectionProperty(TokenIdentifier::class, 'token');
 
         foreach ($property->getAttributes() as $attribute) {
-            $this->assertIsObject($attribute->newInstance());
+            self::assertIsObject($attribute->newInstance());
         }
     }
 }

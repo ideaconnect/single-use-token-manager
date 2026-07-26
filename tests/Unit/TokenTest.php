@@ -17,16 +17,23 @@ use Symfony\Component\Uid\UuidV6;
 #[CoversClass(Token::class)]
 final class TokenTest extends TestCase
 {
+    /**
+     * Asked through reflection rather than with assertInstanceOf, because the
+     * declared return types already prove the latter and a statically certain
+     * assertion documents nothing a reader could not see.
+     */
     public function testItImplementsTheTokenContract(): void
     {
-        $this->assertInstanceOf(TokenInterface::class, new Token('sometest'));
+        self::assertTrue(
+            (new \ReflectionClass(Token::class))->implementsInterface(TokenInterface::class),
+        );
     }
 
     public function testItKeepsTheTypeItWasBuiltWith(): void
     {
         $token = new Token('sometest');
 
-        $this->assertSame('sometest', $token->getType());
+        self::assertSame('sometest', $token->getType());
     }
 
     public function testItKeepsTheObjectPayloadItWasBuiltWith(): void
@@ -36,7 +43,7 @@ final class TokenTest extends TestCase
 
         $token = new Token('sometest', $payload);
 
-        $this->assertSame($payload, $token->getPayload());
+        self::assertSame($payload, $token->getPayload());
     }
 
     /**
@@ -63,21 +70,21 @@ final class TokenTest extends TestCase
     {
         $token = new Token('sometest', $payload);
 
-        $this->assertSame($payload, $token->getPayload());
+        self::assertSame($payload, $token->getPayload());
     }
 
     public function testItDefaultsToAnEmptyPayload(): void
     {
         $token = new Token('sometest');
 
-        $this->assertNull($token->getPayload());
+        self::assertNull($token->getPayload());
     }
 
     public function testItReturnsTheUidAsAString(): void
     {
         $token = new Token('sometest');
 
-        $this->assertMatchesRegularExpression(
+        self::assertMatchesRegularExpression(
             '/^[0-9a-f]{8}-[0-9a-f]{4}-6[0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$/',
             $token->getUid(),
         );
@@ -91,7 +98,7 @@ final class TokenTest extends TestCase
         $reflectionProperty = (new \ReflectionClass(Token::class))->getProperty('uid');
         $reflectionProperty->setValue($token, $uuid);
 
-        $this->assertSame((string) $uuid, $token->getUid());
+        self::assertSame((string) $uuid, $token->getUid());
     }
 
     public function testItGivesEveryTokenItsOwnUid(): void
@@ -99,7 +106,7 @@ final class TokenTest extends TestCase
         $first = new Token('sometest');
         $second = new Token('sometest');
 
-        $this->assertNotSame($first->getUid(), $second->getUid());
+        self::assertNotSame($first->getUid(), $second->getUid());
     }
 
     public function testItUsesTimeOrderedIdentifiers(): void
@@ -107,7 +114,7 @@ final class TokenTest extends TestCase
         $first = new Token('sometest');
         $second = new Token('sometest');
 
-        $this->assertLessThan(0, strcmp($first->getUid(), $second->getUid()));
+        self::assertLessThan(0, strcmp($first->getUid(), $second->getUid()));
     }
 
     /**
@@ -124,7 +131,7 @@ final class TokenTest extends TestCase
     #[DataProvider('acceptedTypeProvider')]
     public function testItAcceptsAValidType(string $type): void
     {
-        $this->assertSame($type, (new Token($type))->getType());
+        self::assertSame($type, (new Token($type))->getType());
     }
 
     /**

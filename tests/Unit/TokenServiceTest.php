@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace IDCT\Tests\SingleUseTokenManager\Unit;
 
 use IDCT\SingleUseTokenManager\Contract\TaggedCacheInterface;
-use IDCT\SingleUseTokenManager\Contract\TokenInterface;
 use IDCT\SingleUseTokenManager\Contract\TokenServiceInterface;
 use IDCT\SingleUseTokenManager\Exception\TokenStorageException;
 use IDCT\SingleUseTokenManager\Model\Token;
@@ -35,19 +34,25 @@ final class TokenServiceTest extends TestCase
         $cache = new InMemoryCache();
         $service = new TokenService($cache);
 
-        $this->assertSame($cache, $this->callProtected($service, 'getCache'));
+        self::assertSame($cache, $this->callProtected($service, 'getCache'));
     }
 
+    /**
+     * Asked through reflection rather than with assertInstanceOf, because the
+     * declared types already prove the latter.
+     */
     public function testItImplementsTheServiceContract(): void
     {
-        $this->assertInstanceOf(TokenServiceInterface::class, new TokenService(new InMemoryCache()));
+        self::assertTrue(
+            (new \ReflectionClass(TokenService::class))->implementsInterface(TokenServiceInterface::class),
+        );
     }
 
     public function testItPrefixesTheUidToBuildTheCacheKey(): void
     {
         $service = new TokenService(new InMemoryCache());
 
-        $this->assertSame(
+        self::assertSame(
             'TKN_test-uid-123',
             $this->callProtected($service, 'buildKey', 'test-uid-123'),
         );
@@ -57,7 +62,7 @@ final class TokenServiceTest extends TestCase
     {
         $service = new TokenService(new InMemoryCache());
 
-        $this->assertSame(
+        self::assertSame(
             TokenServiceInterface::CACHE_KEY.'uid',
             $this->callProtected($service, 'buildKey', 'uid'),
         );
@@ -69,9 +74,9 @@ final class TokenServiceTest extends TestCase
 
         $token = $service->createToken('testtype');
 
-        $this->assertInstanceOf(TokenInterface::class, $token);
-        $this->assertSame('testtype', $token->getType());
-        $this->assertNull($token->getPayload());
+        self::assertSame('testtype', $token->getType());
+        self::assertNull($token->getPayload());
+        self::assertNotSame('', $token->getUid());
     }
 
     public function testItCreatesATokenCarryingThePayload(): void
@@ -82,7 +87,7 @@ final class TokenServiceTest extends TestCase
 
         $token = $service->createToken('testtype', $payload);
 
-        $this->assertSame($payload, $token->getPayload());
+        self::assertSame($payload, $token->getPayload());
     }
 
     public function testItStoresTheTokenUnderItsPrefixedKey(): void
@@ -93,9 +98,9 @@ final class TokenServiceTest extends TestCase
         $token = $service->createToken('testtype');
 
         $write = $cache->lastWrite();
-        $this->assertNotNull($write);
-        $this->assertSame('TKN_'.$token->getUid(), $write['key']);
-        $this->assertSame($token, $write['value']);
+        self::assertNotNull($write);
+        self::assertSame('TKN_'.$token->getUid(), $write['key']);
+        self::assertSame($token, $write['value']);
     }
 
     public function testItStoresTheTokenWithoutATtlByDefault(): void
@@ -105,8 +110,8 @@ final class TokenServiceTest extends TestCase
         (new TokenService($cache))->createToken('testtype');
 
         $write = $cache->lastWrite();
-        $this->assertNotNull($write);
-        $this->assertNull($write['ttl']);
+        self::assertNotNull($write);
+        self::assertNull($write['ttl']);
     }
 
     public function testItPassesTheGivenTtlToTheCache(): void
@@ -116,8 +121,8 @@ final class TokenServiceTest extends TestCase
         (new TokenService($cache))->createToken('testtype', 'payload', 150);
 
         $write = $cache->lastWrite();
-        $this->assertNotNull($write);
-        $this->assertSame(150, $write['ttl']);
+        self::assertNotNull($write);
+        self::assertSame(150, $write['ttl']);
     }
 
     public function testItDoesNotTagOnAPlainCache(): void
@@ -127,8 +132,8 @@ final class TokenServiceTest extends TestCase
         (new TokenService($cache))->createToken('testtype');
 
         $write = $cache->lastWrite();
-        $this->assertNotNull($write);
-        $this->assertNull($write['tag']);
+        self::assertNotNull($write);
+        self::assertNull($write['tag']);
     }
 
     public function testItTagsTheTokenOnATaggingCache(): void
@@ -138,9 +143,9 @@ final class TokenServiceTest extends TestCase
         $token = (new TokenService($cache))->createToken('testtype');
 
         $write = $cache->lastWrite();
-        $this->assertNotNull($write);
-        $this->assertSame(TokenServiceInterface::CACHE_TAG, $write['tag']);
-        $this->assertSame(['TKN_'.$token->getUid()], $cache->keysTaggedWith(TokenServiceInterface::CACHE_TAG));
+        self::assertNotNull($write);
+        self::assertSame(TokenServiceInterface::CACHE_TAG, $write['tag']);
+        self::assertSame(['TKN_'.$token->getUid()], $cache->keysTaggedWith(TokenServiceInterface::CACHE_TAG));
     }
 
     public function testItPassesTheTtlThroughTheTaggedWriteAsWell(): void
@@ -150,8 +155,8 @@ final class TokenServiceTest extends TestCase
         (new TokenService($cache))->createToken('testtype', null, 900);
 
         $write = $cache->lastWrite();
-        $this->assertNotNull($write);
-        $this->assertSame(900, $write['ttl']);
+        self::assertNotNull($write);
+        self::assertSame(900, $write['ttl']);
     }
 
     public function testItRejectsAnInvalidTypeBeforeTouchingTheCache(): void
@@ -160,9 +165,9 @@ final class TokenServiceTest extends TestCase
 
         try {
             (new TokenService($cache))->createToken('NOT VALID');
-            $this->fail('An invalid token type should have been rejected.');
+            self::fail('An invalid token type should have been rejected.');
         } catch (\InvalidArgumentException) {
-            $this->assertSame([], $cache->writes());
+            self::assertSame([], $cache->writes());
         }
     }
 
@@ -191,7 +196,7 @@ final class TokenServiceTest extends TestCase
     {
         $exception = TokenStorageException::forKey('TKN_abc');
 
-        $this->assertSame(sprintf(TokenStorageException::MESSAGE, 'TKN_abc'), $exception->getMessage());
+        self::assertSame(sprintf(TokenStorageException::MESSAGE, 'TKN_abc'), $exception->getMessage());
     }
 
     public function testItReturnsTheTokenWhenTheCacheAcceptsTheWrite(): void
@@ -199,7 +204,9 @@ final class TokenServiceTest extends TestCase
         $cache = $this->createMock(CacheInterface::class);
         $cache->method('set')->willReturn(true);
 
-        $this->assertInstanceOf(TokenInterface::class, (new TokenService($cache))->createToken('testtype'));
+        $token = (new TokenService($cache))->createToken('testtype');
+
+        self::assertSame('testtype', $token->getType());
     }
 
     public function testItReadsTheTokenBackUnderItsPrefixedKey(): void
@@ -211,7 +218,7 @@ final class TokenServiceTest extends TestCase
             ->with('TKN_'.$token->getUid())
             ->willReturn($token);
 
-        $this->assertSame($token, (new TokenService($cache))->consumeToken($token->getUid()));
+        self::assertSame($token, (new TokenService($cache))->consumeToken($token->getUid()));
     }
 
     public function testItRemovesTheTokenOnceRedeemed(): void
@@ -220,8 +227,8 @@ final class TokenServiceTest extends TestCase
         $service = new TokenService($cache);
         $token = $service->createToken('testtype');
 
-        $this->assertSame($token->getUid(), $service->consumeToken($token->getUid())?->getUid());
-        $this->assertNull($service->consumeToken($token->getUid()));
+        self::assertSame($token->getUid(), $service->consumeToken($token->getUid())?->getUid());
+        self::assertNull($service->consumeToken($token->getUid()));
     }
 
     public function testItDeletesExactlyTheRedeemedKey(): void
@@ -242,9 +249,9 @@ final class TokenServiceTest extends TestCase
         $service = new TokenService($cache);
         $token = $service->createToken('testtype');
 
-        $this->assertNotNull($service->consumeToken($token->getUid(), true));
-        $this->assertNotNull($service->consumeToken($token->getUid(), true));
-        $this->assertNotNull($service->consumeToken($token->getUid()));
+        self::assertNotNull($service->consumeToken($token->getUid(), true));
+        self::assertNotNull($service->consumeToken($token->getUid(), true));
+        self::assertNotNull($service->consumeToken($token->getUid()));
     }
 
     public function testItDoesNotDeleteAnythingWhenKeepingTheToken(): void
@@ -254,14 +261,14 @@ final class TokenServiceTest extends TestCase
         $cache->method('get')->willReturn($token);
         $cache->expects($this->never())->method('delete');
 
-        $this->assertSame($token, (new TokenService($cache))->consumeToken($token->getUid(), true));
+        self::assertSame($token, (new TokenService($cache))->consumeToken($token->getUid(), true));
     }
 
     public function testItReturnsNullForAnUnknownIdentifier(): void
     {
         $service = new TokenService(new InMemoryCache());
 
-        $this->assertNull($service->consumeToken('no-such-uid'));
+        self::assertNull($service->consumeToken('no-such-uid'));
     }
 
     public function testItDoesNotDeleteAnythingForAnUnknownIdentifier(): void
@@ -270,7 +277,7 @@ final class TokenServiceTest extends TestCase
         $cache->method('get')->willReturn(null);
         $cache->expects($this->never())->method('delete');
 
-        $this->assertNull((new TokenService($cache))->consumeToken('no-such-uid'));
+        self::assertNull((new TokenService($cache))->consumeToken('no-such-uid'));
     }
 
     /**
@@ -296,7 +303,7 @@ final class TokenServiceTest extends TestCase
         $cache->method('get')->willReturn($cached);
         $cache->expects($this->never())->method('delete');
 
-        $this->assertNull((new TokenService($cache))->consumeToken('some-uid'));
+        self::assertNull((new TokenService($cache))->consumeToken('some-uid'));
     }
 
     public function testItClearsTheWholePoolOnAPlainCache(): void
@@ -304,7 +311,7 @@ final class TokenServiceTest extends TestCase
         $cache = $this->createMock(CacheInterface::class);
         $cache->expects($this->once())->method('clear')->willReturn(true);
 
-        $this->assertTrue((new TokenService($cache))->clearAllTokens());
+        self::assertTrue((new TokenService($cache))->clearAllTokens());
     }
 
     public function testItReportsAFailedPoolClear(): void
@@ -312,7 +319,7 @@ final class TokenServiceTest extends TestCase
         $cache = $this->createMock(CacheInterface::class);
         $cache->expects($this->once())->method('clear')->willReturn(false);
 
-        $this->assertFalse((new TokenService($cache))->clearAllTokens());
+        self::assertFalse((new TokenService($cache))->clearAllTokens());
     }
 
     public function testItClearsByTagOnATaggingCache(): void
@@ -324,7 +331,7 @@ final class TokenServiceTest extends TestCase
             ->willReturn(true);
         $cache->expects($this->never())->method('clear');
 
-        $this->assertTrue((new TokenService($cache))->clearAllTokens());
+        self::assertTrue((new TokenService($cache))->clearAllTokens());
     }
 
     public function testItReportsAFailedTagClear(): void
@@ -332,7 +339,7 @@ final class TokenServiceTest extends TestCase
         $cache = new TaggedInMemoryCache();
         $cache->failClearByTag();
 
-        $this->assertFalse((new TokenService($cache))->clearAllTokens());
+        self::assertFalse((new TokenService($cache))->clearAllTokens());
     }
 
     public function testTagClearingLeavesUntaggedEntriesAlone(): void
@@ -342,9 +349,9 @@ final class TokenServiceTest extends TestCase
         $service = new TokenService($cache);
         $token = $service->createToken('testtype');
 
-        $this->assertTrue($service->clearAllTokens());
-        $this->assertNull($service->consumeToken($token->getUid()));
-        $this->assertSame('value', $cache->get('unrelated'));
+        self::assertTrue($service->clearAllTokens());
+        self::assertNull($service->consumeToken($token->getUid()));
+        self::assertSame('value', $cache->get('unrelated'));
     }
 
     public function testPoolClearingTakesUnrelatedEntriesWithIt(): void
@@ -354,9 +361,9 @@ final class TokenServiceTest extends TestCase
         $service = new TokenService($cache);
         $token = $service->createToken('testtype');
 
-        $this->assertTrue($service->clearAllTokens());
-        $this->assertNull($service->consumeToken($token->getUid()));
-        $this->assertNull($cache->get('unrelated'));
+        self::assertTrue($service->clearAllTokens());
+        self::assertNull($service->consumeToken($token->getUid()));
+        self::assertNull($cache->get('unrelated'));
     }
 
     /**
@@ -376,7 +383,7 @@ final class TokenServiceTest extends TestCase
     {
         $service = new TokenService($cache);
 
-        $this->assertSame($expected, $this->callProtected($service, 'supportsTagging', $cache));
+        self::assertSame($expected, $this->callProtected($service, 'supportsTagging', $cache));
     }
 
     public function testItTagsOnACacheThatOnlyLooksTheTaggingPart(): void
@@ -387,9 +394,9 @@ final class TokenServiceTest extends TestCase
         $token = $service->createToken('testtype');
 
         $write = $cache->lastWrite();
-        $this->assertNotNull($write);
-        $this->assertSame(TokenServiceInterface::CACHE_TAG, $write['tag']);
-        $this->assertSame(['TKN_'.$token->getUid()], $cache->keysTaggedWith(TokenServiceInterface::CACHE_TAG));
+        self::assertNotNull($write);
+        self::assertSame(TokenServiceInterface::CACHE_TAG, $write['tag']);
+        self::assertSame(['TKN_'.$token->getUid()], $cache->keysTaggedWith(TokenServiceInterface::CACHE_TAG));
     }
 
     public function testItFallsBackToPlainWritesWhenOnlyHalfTheTaggingApiIsThere(): void
@@ -399,8 +406,8 @@ final class TokenServiceTest extends TestCase
         (new TokenService($cache))->createToken('testtype');
 
         $write = $cache->lastWrite();
-        $this->assertNotNull($write);
-        $this->assertNull($write['tag']);
+        self::assertNotNull($write);
+        self::assertNull($write['tag']);
     }
 
     /**
@@ -414,11 +421,11 @@ final class TokenServiceTest extends TestCase
         $token = $service->createToken('session', ['user' => 7], 3600);
         $consumed = $service->consumeToken($token->getUid());
 
-        $this->assertNotNull($consumed);
-        $this->assertSame($token->getUid(), $consumed->getUid());
-        $this->assertSame('session', $consumed->getType());
-        $this->assertSame(['user' => 7], $consumed->getPayload());
-        $this->assertNull($service->consumeToken($token->getUid()));
+        self::assertNotNull($consumed);
+        self::assertSame($token->getUid(), $consumed->getUid());
+        self::assertSame('session', $consumed->getType());
+        self::assertSame(['user' => 7], $consumed->getPayload());
+        self::assertNull($service->consumeToken($token->getUid()));
     }
 
     public function testASubclassCanSubstituteTheCache(): void
@@ -429,8 +436,8 @@ final class TokenServiceTest extends TestCase
 
         $service->createToken('testtype');
 
-        $this->assertSame(0, $constructed->count());
-        $this->assertSame(1, $substituted->count());
+        self::assertSame(0, $constructed->count());
+        self::assertSame(1, $substituted->count());
     }
 
     public function testASubclassCanChangeTheCacheKey(): void
@@ -441,9 +448,9 @@ final class TokenServiceTest extends TestCase
         $token = $service->createToken('testtype');
 
         $write = $cache->lastWrite();
-        $this->assertNotNull($write);
-        $this->assertSame(CustomisedTokenService::CUSTOM_PREFIX.$token->getUid(), $write['key']);
-        $this->assertNotNull($service->consumeToken($token->getUid()));
+        self::assertNotNull($write);
+        self::assertSame(CustomisedTokenService::CUSTOM_PREFIX.$token->getUid(), $write['key']);
+        self::assertNotNull($service->consumeToken($token->getUid()));
     }
 
     public function testASubclassCanTurnTaggingOff(): void
@@ -454,9 +461,9 @@ final class TokenServiceTest extends TestCase
         $service->createToken('testtype');
 
         $write = $cache->lastWrite();
-        $this->assertNotNull($write);
-        $this->assertNull($write['tag']);
-        $this->assertSame([], $cache->keysTaggedWith(TokenServiceInterface::CACHE_TAG));
+        self::assertNotNull($write);
+        self::assertNull($write['tag']);
+        self::assertSame([], $cache->keysTaggedWith(TokenServiceInterface::CACHE_TAG));
     }
 
     public function testASubclassCanTurnTaggingOn(): void
@@ -467,10 +474,10 @@ final class TokenServiceTest extends TestCase
         $token = $service->createToken('testtype');
 
         $write = $cache->lastWrite();
-        $this->assertNotNull($write);
-        $this->assertSame(TokenServiceInterface::CACHE_TAG, $write['tag']);
-        $this->assertTrue($service->clearAllTokens());
-        $this->assertNull($service->consumeToken($token->getUid()));
+        self::assertNotNull($write);
+        self::assertSame(TokenServiceInterface::CACHE_TAG, $write['tag']);
+        self::assertTrue($service->clearAllTokens());
+        self::assertNull($service->consumeToken($token->getUid()));
     }
 
     /**

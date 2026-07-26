@@ -78,6 +78,11 @@ jobs:
       - name: Check the coding standard
         run: composer lint
 
+      # PHPStan runs at level max with no ignored errors, so a new error is a
+      # build failure rather than a line in a baseline.
+      - name: Static analysis
+        run: composer analyse -- --no-progress
+
       - name: Wait for Redis and Valkey
         run: |
           timeout 30 bash -c 'until (echo > /dev/tcp/127.0.0.1/6379) 2>/dev/null; do sleep 1; done'

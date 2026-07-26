@@ -1,4 +1,4 @@
-.PHONY: help install start stop clean test unit bdd bdd-memory mutation lint fix example
+.PHONY: help install start stop clean test analyse unit bdd bdd-memory mutation lint fix example
 
 help: ## Show this help
 	@echo "Single Use Token Manager"
@@ -16,6 +16,9 @@ stop: ## Stop the containers
 
 clean: ## Stop the containers and drop their volumes
 	composer cache:clean
+
+analyse: ## Run PHPStan at level max
+	composer analyse
 
 unit: ## Run the unit tests with coverage
 	composer test:unit

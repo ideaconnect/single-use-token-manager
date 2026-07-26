@@ -193,7 +193,9 @@ final class TokenServiceContext implements Context
     #[Then('I should get a token')]
     public function iShouldGetAToken(): void
     {
-        Assert::assertInstanceOf(TokenInterface::class, $this->lastToken());
+        // lastToken() already fails the step when nothing was created, so the
+        // assertion worth making here is that the token is usable.
+        Assert::assertNotSame('', $this->lastToken()->getUid());
     }
 
     #[Then('the token identifier should be a version 6 uuid')]

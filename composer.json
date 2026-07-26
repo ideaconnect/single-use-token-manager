@@ -34,6 +34,9 @@
         "friendsofphp/php-cs-fixer": "^3.95",
         "idct/php-rapid-cache-client": "^1.0",
         "infection/infection": "^0.32",
+        "phpstan/phpstan": "^2.2",
+        "phpstan/phpstan-phpunit": "^2.0",
+        "phpstan/phpstan-strict-rules": "^2.0",
         "phpunit/phpunit": "^11.5",
         "symfony/cache": "^6.4 || ^7.0",
         "symfony/property-access": "^6.4 || ^7.0"
@@ -69,7 +72,9 @@
             "./vendor/bin/behat --strict --no-interaction"
         ],
         "test:mutation": "XDEBUG_MODE=coverage ./vendor/bin/infection --threads=max --no-progress --no-interaction",
+        "analyse": "./vendor/bin/phpstan analyse --memory-limit=512M",
         "test": [
+            "@analyse",
             "@test:unit",
             "@test:bdd",
             "@test:mutation"
@@ -87,7 +92,8 @@
         "test:bdd:redis": "Run the Behat suites that need Redis and Valkey",
         "test:bdd": "Run every Behat suite",
         "test:mutation": "Run Infection mutation testing",
-        "test": "Run unit, functional and mutation tests",
+        "analyse": "Run PHPStan at the maximum level",
+        "test": "Run static analysis, then unit, functional and mutation tests",
         "fix": "Apply the coding standard",
         "lint": "Report coding standard violations without changing anything"
     },

@@ -191,6 +191,9 @@ $readOnlyCache = new class(new Psr16Cache(new FilesystemAdapter())) implements P
         return $this->inner->getMultiple($keys, $default);
     }
 
+    /**
+     * @param iterable<mixed, mixed> $values
+     */
     public function setMultiple(iterable $values, int|DateInterval|null $ttl = null): bool
     {
         return false;
