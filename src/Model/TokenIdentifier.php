@@ -39,7 +39,7 @@ class TokenIdentifier
      * OpenAPI schema documents.
      */
     #[SerializedName('token')]
-    #[OA\Schema(type: 'string', description: 'The unique identifier of the token to consume', example: '1efb1c4e-0f7a-6c1a-9b2f-0242ac120002')]
+    #[OA\Schema(type: 'string', description: 'The unique identifier of the token to consume', example: '7c6b0c0c-d9b0-45af-a9c6-79ab7dd5c35d')]
     #[Assert\Type('string')]
     #[Assert\NotBlank(normalizer: 'trim')]
     #[Assert\NotNull]

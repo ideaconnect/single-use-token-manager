@@ -66,7 +66,7 @@ final class TokenIdentifierTest extends TestCase
      */
     public static function acceptedIdentifierProvider(): iterable
     {
-        yield 'uuid' => ['1efb1c4e-0f7a-6c1a-9b2f-0242ac120002'];
+        yield 'uuid' => ['7c6b0c0c-d9b0-45af-a9c6-79ab7dd5c35d'];
         yield 'plain word' => ['token'];
         yield 'digits only' => ['123'];
         yield 'punctuation' => ['token-with-special-chars_!@#$%^&*()'];

@@ -29,7 +29,8 @@ composer require idct/single-use-token-manager
 You also need a PSR-16 cache. Two that work well:
 
 ```bash
-# Redis or Valkey, with tag support
+# Redis or Valkey. Gives you tag-scoped clearing and single use that holds
+# under concurrency, both picked up automatically.
 composer require idct/php-rapid-cache-client
 
 # Or wrap any Symfony PSR-6 adapter as PSR-16
@@ -48,7 +49,7 @@ $service = new TokenService(new Psr16Cache(new ArrayAdapter()));
 // Issue a token that lives for an hour.
 $token = $service->createToken('reset', ['user_id' => 123], 3600);
 
-$token->getUid();     // '1efb1c4e-0f7a-6c1a-9b2f-0242ac120002'
+$token->getUid();     // '7c6b0c0c-d9b0-45af-a9c6-79ab7dd5c35d'
 $token->getType();    // 'reset'
 $token->getPayload(); // ['user_id' => 123]
 
@@ -208,6 +209,20 @@ The service detects the method rather than the interface, so any cache carrying
 a compatible `take()` is used as-is. Backing it is usually one command: Redis
 and Valkey have had `GETDEL` since 6.2, which phpredis exposes as `getDel()`.
 
+`idct/php-rapid-cache-client` ships `take()` from **1.1** onwards, so it gives
+you both halves at once: tag-scoped clearing and single use that holds under
+concurrency, with no wiring beyond constructing it.
+
+```php
+use IDCT\Cache\RapidCacheClient;
+use IDCT\Cache\RedisConnectionConfig;
+
+$cache = new RapidCacheClient(new RedisConnectionConfig(host: '127.0.0.1', port: 6379));
+
+// Tagging and atomic redemption are both picked up automatically.
+$service = new TokenService($cache);
+```
+
 `tests/Concurrency/single-use-under-load.php` demonstrates both halves. It lines
 eight processes up on one token and asserts that an atomic cache yields exactly
 one winner while a plain one does not, so neither this section nor the guarantee
@@ -215,8 +230,8 @@ can drift without the build noticing:
 
 ```
 $ composer test:concurrency
-atomic cache:     1 of 8 redeemers won
-plain PSR-16:     8 of 8 redeemers won
+rapid cache client: 1 of 8 redeemers won
+plain PSR-16:       8 of 8 redeemers won
 ```
 
 If more than one request can present the same token at once, and both succeeding

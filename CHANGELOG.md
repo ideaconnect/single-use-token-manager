@@ -6,6 +6,13 @@ All notable changes to this project are recorded here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- `idct/php-rapid-cache-client` is now required at `^1.1` for development. That
+  release adds `take()`, so the token service picks up atomic redemption from it
+  with no wiring, and the concurrency check exercises the real dependency rather
+  than a test fixture.
+
 ## [2.0.0]
 
 A security release as much as a rename. Two of the changes below fix cases where

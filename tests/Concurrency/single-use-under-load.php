@@ -13,8 +13,10 @@ declare(strict_types=1);
  *
  * Both cache shapes are exercised on purpose:
  *
- *   - A cache with an atomic take must produce exactly one winner. That is the
- *     regression guard: if the atomic path is ever bypassed, this fails.
+ *   - idct/php-rapid-cache-client, whose take() is a real atomic operation,
+ *     must produce exactly one winner. Running the actual dependency rather
+ *     than a test fixture means this measures what a consumer following the
+ *     README gets. If the atomic path is ever bypassed, this fails.
  *   - A plain PSR-16 cache is expected to produce more than one winner, which
  *     is the limitation the README documents. It is asserted rather than
  *     assumed, so the documentation cannot quietly drift away from the code.
@@ -26,15 +28,16 @@ declare(strict_types=1);
 
 require_once __DIR__.'/../../vendor/autoload.php';
 
+use IDCT\Cache\RapidCacheClient;
+use IDCT\Cache\RedisConnectionConfig;
 use IDCT\SingleUseTokenManager\TokenService;
-use IDCT\Tests\SingleUseTokenManager\Double\RedisGetDelCache;
 use Psr\SimpleCache\CacheInterface;
 use Symfony\Component\Cache\Adapter\RedisAdapter;
 use Symfony\Component\Cache\Psr16Cache;
 
 const REDEEMERS = 8;
 const KEY_PREFIX = 'concurrency_';
-const DRIVER_ATOMIC = 'atomic';
+const DRIVER_ATOMIC = 'rapid_cache';
 const DRIVER_PLAIN = 'plain';
 
 /**
@@ -49,7 +52,14 @@ function build_cache(string $driver): CacheInterface
     $port = false === $configuredPort || '' === $configuredPort ? 6379 : (int) $configuredPort;
 
     if (DRIVER_ATOMIC === $driver) {
-        return new RedisGetDelCache($host, $port, KEY_PREFIX);
+        // The real dependency, not a test fixture: idct/php-rapid-cache-client
+        // exposes take() from 1.1 onwards, so this measures what a consumer
+        // following the README actually gets.
+        return new RapidCacheClient(new RedisConnectionConfig(
+            host: $host,
+            port: $port,
+            prefix: KEY_PREFIX,
+        ));
     }
 
     $redis = new Redis();
@@ -120,7 +130,7 @@ function count_winners(string $driver): int
 $failures = 0;
 
 $atomicWinners = count_winners(DRIVER_ATOMIC);
-printf('atomic cache:     %d of %d redeemers won%s', $atomicWinners, REDEEMERS, PHP_EOL);
+printf('rapid cache client: %d of %d redeemers won%s', $atomicWinners, REDEEMERS, PHP_EOL);
 if (1 !== $atomicWinners) {
     fwrite(STDERR, sprintf(
         'FAILED: an atomic cache must yield exactly one winner, got %d.%s',
@@ -131,7 +141,7 @@ if (1 !== $atomicWinners) {
 }
 
 $plainWinners = count_winners(DRIVER_PLAIN);
-printf('plain PSR-16:     %d of %d redeemers won%s', $plainWinners, REDEEMERS, PHP_EOL);
+printf('plain PSR-16:       %d of %d redeemers won%s', $plainWinners, REDEEMERS, PHP_EOL);
 if ($plainWinners <= 1) {
     fwrite(STDERR, sprintf(
         'FAILED: a plain cache was expected to let more than one redeemer through, got %d. '
