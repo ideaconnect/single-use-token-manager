@@ -1,7 +1,7 @@
 # Single Use Token Manager
 
 [![CI](https://github.com/ideaconnect/single-use-token-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/ideaconnect/single-use-token-manager/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg?style=flat)](https://github.com/ideaconnect/single-use-token-manager/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/ideaconnect/single-use-token-manager/graph/badge.svg)](https://codecov.io/gh/ideaconnect/single-use-token-manager)
 [![Mutation score](https://img.shields.io/badge/MSI-100%25-brightgreen.svg?style=flat)](https://github.com/ideaconnect/single-use-token-manager/actions/workflows/ci.yml)
 [![PHPStan](https://img.shields.io/badge/PHPStan-level%20max-brightgreen.svg?style=flat)](phpstan.neon.dist)
 [![PHP](https://img.shields.io/badge/php-8.2%20%7C%208.3%20%7C%208.4%20%7C%208.5-777BB4.svg?style=flat&logo=php&logoColor=white)](https://www.php.net/)
@@ -373,11 +373,18 @@ composer test              # all of the above
 composer lint              # coding standard
 ```
 
+Every one of these runs on every CI job, across PHP 8.2 to 8.5 and against both
+the newest and the lowest allowed dependency resolution. Nothing is gated to a
+single job, so a failure that only shows up under one version or one resolution
+still fails the build.
+
 The suite holds four lines and the build fails below any of them: 100% line
 coverage, 100% method coverage, a mutation score index of 100%, and PHPStan at
 level max over `src`, `tests` and `example.php`. There is no PHPStan baseline
 and no ignored error, so a new finding fails the build instead of being
-recorded and forgotten.
+recorded and forgotten. Coverage is published to
+[Codecov](https://codecov.io/gh/ideaconnect/single-use-token-manager) from each
+job, flagged by PHP version and dependency mode.
 
 ### What the functional tests cover
 
