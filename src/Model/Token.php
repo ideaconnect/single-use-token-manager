@@ -6,15 +6,28 @@ namespace IDCT\SingleUseTokenManager\Model;
 
 use IDCT\SingleUseTokenManager\Contract\TokenInterface;
 use Symfony\Component\Uid\Uuid;
-use Symfony\Component\Uid\UuidV6;
+use Symfony\Component\Uid\UuidV4;
 
 /**
  * Immutable single-use token.
  *
- * Each instance receives a UUID v6 identifier at construction time. Version 6
- * is time ordered, so tokens created close together sort close together, which
- * keeps the index locality of a cache or database sensible while still being
- * unguessable in practice.
+ * Each instance receives a UUID v4 identifier at construction time, which
+ * Symfony builds from `random_bytes()`. The version matters here. A token is a
+ * bearer capability: whoever holds the identifier can perform the action, so
+ * the identifier has to be unguessable, and only a cryptographically secure
+ * source makes it so.
+ *
+ * Time ordered versions are deliberately not used. A v6 identifier carries a
+ * node that Symfony computes once per process and then repeats on every token
+ * that process issues, so a single leaked token discloses it for all the
+ * others, leaving little beyond the clock to guess. A v7 identifier is seeded
+ * once and then incremented, so consecutive values sit next to each other.
+ * Both are fine for database keys and neither is fine for a secret. RFC 9562
+ * says as much: do not assume a UUID is hard to guess unless it comes from a
+ * CSPRNG.
+ *
+ * Giving up the time ordering costs only cache index locality, which is worth
+ * very little for entries fetched by exact key that expire on their own.
  *
  * The type is deliberately restrictive: lowercase letters and digits only, at
  * most 16 characters. That keeps it safe to embed in a cache key or a URL
@@ -49,8 +62,8 @@ final class Token implements TokenInterface
      */
     public const TYPE_PATTERN = '/^[a-z0-9]{1,16}\z/';
 
-    /** @var UuidV6 Time ordered unique identifier of this token */
-    private UuidV6 $uid;
+    /** @var UuidV4 Randomly generated unique identifier of this token */
+    private UuidV4 $uid;
 
     /**
      * Creates a token of the given type, carrying an optional payload.
@@ -73,13 +86,13 @@ final class Token implements TokenInterface
             throw new \InvalidArgumentException(sprintf(self::TYPE_ERROR, $type));
         }
 
-        $this->uid = Uuid::v6();
+        $this->uid = Uuid::v4();
     }
 
     /**
      * Returns the unique identifier of this token.
      *
-     * @return string the canonical string form of the token's UUID v6
+     * @return string the canonical string form of the token's UUID v4
      */
     public function getUid(): string
     {

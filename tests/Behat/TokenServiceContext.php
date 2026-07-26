@@ -202,11 +202,11 @@ final class TokenServiceContext implements Context
         Assert::assertNotSame('', $this->lastToken()->getUid());
     }
 
-    #[Then('the token identifier should be a version 6 uuid')]
-    public function theTokenIdentifierShouldBeAVersionSixUuid(): void
+    #[Then('the token identifier should be a version 4 uuid')]
+    public function theTokenIdentifierShouldBeAVersionFourUuid(): void
     {
         Assert::assertMatchesRegularExpression(
-            '/^[0-9a-f]{8}-[0-9a-f]{4}-6[0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$/',
+            '/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/',
             $this->lastToken()->getUid(),
         );
     }

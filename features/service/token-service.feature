@@ -11,7 +11,7 @@ Feature: Token service
   Scenario: Issuing a token returns it with an identifier
     When I create a token of type "reset"
     Then I should get a token
-    And the token identifier should be a version 6 uuid
+    And the token identifier should be a version 4 uuid
 
   Scenario: A token comes back with the type and payload it was issued with
     Given I have created a token of type "reset" with payload "user-7"

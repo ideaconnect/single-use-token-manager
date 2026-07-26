@@ -18,10 +18,10 @@ Feature: Token
     Then I should get a token
     And the token should carry no payload
 
-  Scenario: A token identifies itself with a time ordered uuid
+  Scenario: A token identifies itself with an unguessable uuid
     Given a token type of "reset"
     When I construct the token
-    Then the token identifier should be a version 6 uuid
+    Then the token identifier should be a version 4 uuid
 
   Scenario: Two tokens of the same type are still told apart
     Given a token type of "reset"

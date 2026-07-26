@@ -70,8 +70,11 @@ php example.php
 ## How it works
 
 A token is stored as one cache entry under the key `TKN_` plus its identifier.
-The identifier is a UUID v6, which is time ordered, so tokens issued close
-together sit close together in the cache index. Expiry is the cache's job: a
+The identifier is a UUID v4, built from `random_bytes()`. That matters more than
+it looks: a token is a bearer capability, so whoever holds the identifier can
+perform the action, and only a cryptographically secure source makes it
+unguessable. Time ordered versions are deliberately avoided, for reasons set out
+in [Why the identifier is random](#why-the-identifier-is-random). Expiry is the cache's job: a
 lifetime handed to `createToken()` goes straight through to the PSR-16 write, so
 an expired token simply is not there any more.
 
@@ -151,6 +154,38 @@ the false into a `TokenStorageException` instead.
 so reporting the failure is better than telling the caller it was spent. The
 redeemed token is not returned in that case: losing one legitimate redemption
 beats leaving a token open to replay.
+
+## Why the identifier is random
+
+A single-use token is a bearer capability: possession of the identifier is the
+whole authorisation. That puts it in the same category as a session cookie, not
+the same category as a database primary key, and it has to be unguessable.
+
+Time ordered UUIDs are not. A v6 identifier carries a node that Symfony computes
+once per process and then repeats on every token that process issues, so tokens
+from one php-fpm worker all share their last twelve characters:
+
+```
+1f18890c-1563-6ae2-a9b7-77b0849864a3
+1f18890c-1563-6c9a-a438-77b0849864a3
+1f18890c-1563-6ccc-988e-77b0849864a3
+                        ^^^^^^^^^^^^ identical for the life of the process
+```
+
+One leaked token gives that away for all the others, and the rest is mostly a
+clock. An attacker who can request a token for their own account learns the node
+and pins the time, leaving far too little to guess. A v7 identifier is no better
+here: Symfony seeds it once and then increments, so consecutive values sit next
+to each other.
+
+RFC 9562 makes the same point in its security considerations: do not assume a
+UUID is hard to guess, and do not use one as a security capability unless it
+comes from a CSPRNG.
+
+So the identifier is a v4, which Symfony builds from `random_bytes()`. The cost
+is the loss of time ordering, which only ever bought cache index locality, and
+that is worth very little for entries fetched by exact key that expire on their
+own.
 
 ## Concurrency
 
@@ -270,7 +305,7 @@ src/
 ├── Exception/
 │   └── TokenStorageException.php   Raised when the cache refuses a write
 ├── Model/
-│   ├── Token.php                   Immutable token with a UUID v6 identifier
+│   ├── Token.php                   Immutable token with a random UUID v4 identifier
 │   └── TokenIdentifier.php         Validated request object
 └── TokenService.php                The service itself
 ```

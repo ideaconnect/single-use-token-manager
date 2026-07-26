@@ -124,12 +124,12 @@ final class TokenContext implements Context
         Assert::assertNull($this->token->getPayload());
     }
 
-    #[Then('the token identifier should be a version 6 uuid')]
-    public function theTokenIdentifierShouldBeAVersionSixUuid(): void
+    #[Then('the token identifier should be a version 4 uuid')]
+    public function theTokenIdentifierShouldBeAVersionFourUuid(): void
     {
         Assert::assertNotNull($this->token);
         Assert::assertMatchesRegularExpression(
-            '/^[0-9a-f]{8}-[0-9a-f]{4}-6[0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$/',
+            '/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\z/',
             $this->token->getUid(),
         );
     }
